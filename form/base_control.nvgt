@@ -10,6 +10,8 @@ abstract class nv_form_control {
 	bool enable_go_line = true, enable_search = true;
 	nv_form_control_callback@callback = null;
 	nv_form_event_dispatcher event;
+	nv_form_context_menu@ context_menu = null;
+	nv_form_suggestion_manager@ suggestion_manager = null;
 	nv_form_control(const string &in caption, const string &in id, int type, nv_form@parent) {
 		this.caption = caption;
 		this.type = type;
@@ -26,7 +28,7 @@ abstract class nv_form_control {
 		} set {
 			rm_shortcut();
 			@__shortcut = value;
-			if (@parent.shortcut != null && @value != null) parent.shortcut.add(value);
+			if (@parent != null && @parent.shortcut != null && @value != null) parent.shortcut.add(value);
 		}
 	}
 	bool rm_shortcut() {
@@ -70,7 +72,7 @@ abstract class nv_form_control {
 	string get_fixed_type_first() property { return ""; }
 	string get_fixed_type_last() property { return ""; }
 	bool check_shortcut() {
-		if (@shortcut == null) return false;
+		if (@shortcut == null || @parent == null || @parent.shortcut == null) return false;
 		return parent.shortcut.is_pressed(shortcut);
 	}
 	bool shortcut_focus() {
@@ -81,13 +83,15 @@ abstract class nv_form_control {
 		return focus();
 	}
 	bool focus(bool quiet = false, bool interrupt_previous_speech = true) {
+		if (@parent == null) return false;
 		return parent.focus_control(this, quiet, interrupt_previous_speech);
 	}
 	string get_str() property {
-		string[] texts = {caption, parent.get_fixed_type(this)};
+		string[] texts = {caption};
+		if (@parent != null) texts.insert_last(parent.get_fixed_type(this));
 		if (!enabled) texts.insert_last(" unavailable");
 		if (@shortcut != null && speak_shortcut) texts.insert_last(shortcut.name);
-		if (!parent.speak_control_attributes_separately) {
+		if (@parent != null && !parent.speak_control_attributes_separately) {
 			string v = get_control_info();
 			if (v != "") texts.insert_last(v);
 		}

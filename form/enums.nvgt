@@ -10,7 +10,8 @@ shared enum nv_form_control_type {
 	nv_form_ct_switch,
 	nv_form_ct_spin,
 	nv_form_ct_tab_control,
-	nv_form_ct_treeview
+	nv_form_ct_treeview,
+	nv_form_ct_table
 }
 
 shared enum nv_form_clipboard_flags {
@@ -18,7 +19,7 @@ shared enum nv_form_clipboard_flags {
 	nv_clipboard_flag_cut = 1 << 1,
 	nv_clipboard_flag_paste = 1 << 2
 }
-//form_errors
+// form_errors
 shared enum nv_form_errorcode {
 	nv_form_error_none = 0,
 	nv_form_error_invalid_index,
@@ -37,14 +38,14 @@ shared enum nv_form_errorcode {
 	nv_form_error_already_active,
 	nv_form_error_switch_empty
 }
-//text entry speech flags
+// Text entry speech flags
 shared enum nv_form_text_entry_speech_flags {
 	textflag_entry_none = 0,
 	textflag_entry_characters,
 	textflag_entry_words,
 	textflag_entry_characters_words
 }
-//Text edit modes
+// Text edit modes
 shared enum nv_form_text_edit_mode_constants {
 	nv_form_edit_mode_replace = 0,
 	nv_form_edit_mode_trim_to_length,

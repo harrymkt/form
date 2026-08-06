@@ -88,7 +88,7 @@ class nv_form_treeview : nv_form_control {
 		pos = -1;
 		if (@current_focused != null) {
 			for (uint i = 0; i < visible_nodes.length(); i++) {
-				if (visible_nodes[i].id == current_focused.id) {
+				if (@visible_nodes[i] == @current_focused) {
 					pos = i;
 					break;
 				}
@@ -155,7 +155,7 @@ class nv_form_treeview : nv_form_control {
 			} else if (@node.parent != null) {
 				nv_form_tree_node@ p = node.parent;
 				for (uint i = 0; i < visible_nodes.length(); i++) {
-					if (visible_nodes[i].id == p.id) {
+					if (@visible_nodes[i] == @p) {
 						pos = i;
 						speak_current_node();
 						return true;

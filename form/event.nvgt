@@ -1,11 +1,36 @@
 class nv_form_event_dispatcher {
-	nv_form_event_handler@ v;
+	nv_form_event_handler@[] handlers;
+	nv_form_event_handler@ v {
+		get const {
+			return handlers.length() > 0 ? handlers[0] : null;
+		}
+		set {
+			handlers.resize(0);
+			if (@value != null) handlers.insert_last(value);
+		}
+	}
 	void add(nv_form_event_handler@ cb) {
-		@v = @cb;
+		if (@cb == null || handlers.find_by_ref(cb) > -1) return;
+		handlers.insert_last(cb);
+	}
+	bool remove(nv_form_event_handler@ cb) {
+		if (@cb == null) return false;
+		int x = handlers.find_by_ref(cb);
+		if (x < 0) return false;
+		handlers.remove_at(x);
+		return true;
+	}
+	void clear() {
+		handlers.resize(0);
+	}
+	uint get_count() const property {
+		return handlers.length();
 	}
 	void fire(nv_form_event@ event) {
-		if (@v == null) return;
-		v(event);
+		for (uint i = 0; i < handlers.length(); i++) {
+			if (@handlers[i] == null) continue;
+			handlers[i](event);
+		}
 	}
 }
 class nv_form_event {

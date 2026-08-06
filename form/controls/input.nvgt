@@ -69,15 +69,15 @@ class nv_form_input: nv_form_control {
 					add(char);
 				return true;
 			}
-			if ((keyboard_modifiers & KEYMOD_SHIFT > 0) && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))) {
+			if (multiline && ((keyboard_modifiers & KEYMOD_SHIFT) > 0) && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))) {
 				add_new_line();
 				return true;
 			}
-			if ((clipboard_flags & nv_clipboard_flag_cut > 0) && (keyboard_modifiers & KEYMOD_CTRL > 0) && (key_repeating(KEY_X)) && password_mask == "") {
+			if (((clipboard_flags & nv_clipboard_flag_cut) > 0) && ((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_X)) && password_mask == "") {
 				cut_highlighted();
 				return true;
 			}
-			if ((clipboard_flags & nv_clipboard_flag_paste > 0) && (keyboard_modifiers & KEYMOD_CTRL > 0) && (key_repeating(KEY_V)) || key_pressed(KEY_PASTE)) {
+			if (((clipboard_flags & nv_clipboard_flag_paste) > 0) && (((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_V)) || key_pressed(KEY_PASTE))) {
 				paste_text();
 				return true;
 			}
@@ -86,7 +86,7 @@ class nv_form_input: nv_form_control {
 					speak(delete_disabled_message);
 					return true;
 				}
-				if ((keyboard_modifiers & KEYMOD_CTRL > 0) && (sel_start < 0 || sel_end < 0 || sel_start > sel_end)) {
+				if (((keyboard_modifiers & KEYMOD_CTRL) > 0) && (sel_start < 0 || sel_end < 0 || sel_start > sel_end)) {
 					delete_word_left();
 					return true;
 				}
@@ -98,7 +98,7 @@ class nv_form_input: nv_form_control {
 					speak(delete_disabled_message);
 					return true;
 				}
-				if ((keyboard_modifiers & KEYMOD_CTRL > 0) && (sel_start < 0 || sel_end < 0 || sel_start > sel_end)) {
+				if (((keyboard_modifiers & KEYMOD_CTRL) > 0) && (sel_start < 0 || sel_end < 0 || sel_start > sel_end)) {
 					delete_word_right();
 					return true;
 				}
@@ -112,13 +112,13 @@ class nv_form_input: nv_form_control {
 		}
 		if (key_repeating(KEY_F2)) {
 			int dir = 1;
-			if (keyboard_modifiers & KEYMOD_SHIFT != 0) dir = -1;
+			if ((keyboard_modifiers & KEYMOD_SHIFT) != 0) dir = -1;
 			nvform_keyboard_echo = nvform_change_keyboard_echo(nvform_keyboard_echo, dir);
 			parent.set_keyboard_echo(nvform_keyboard_echo);
 			speak(nvform_keyboard_echo_string(nvform_keyboard_echo));
 			return true;
 		}
-		if ((clipboard_flags & nv_clipboard_flag_copy > 0) && (keyboard_modifiers & KEYMOD_CTRL > 0) && (key_repeating(KEY_C)) && (password_mask == "")) {
+		if (((clipboard_flags & nv_clipboard_flag_copy) > 0) && ((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_C)) && (password_mask == "")) {
 			copy_highlighted();
 			return true;
 		}
@@ -157,14 +157,14 @@ class nv_form_input: nv_form_control {
 			return true;
 		}
 		if (key_repeating(KEY_UP)) {
-			if ((key_down(KEY_LSHIFT)) || (key_down(KEY_RSHIFT)) && password_mask == "")
+			if (((key_down(KEY_LSHIFT)) || (key_down(KEY_RSHIFT))) && password_mask == "")
 				highlight_up();
 			else
 				previous_line();
 			return true;
 		}
 		if (key_repeating(KEY_DOWN)) {
-			if ((key_down(KEY_LSHIFT)) || (key_down(KEY_RSHIFT)) && password_mask == "")
+			if (((key_down(KEY_LSHIFT)) || (key_down(KEY_RSHIFT))) && password_mask == "")
 				highlight_down();
 			else
 				next_line();
@@ -223,7 +223,7 @@ class nv_form_input: nv_form_control {
 			sel_end = -1;
 			prevselect = true;
 		}
-		if ((max_length > 0) && (new_text.length() >= max_length))
+		if ((max_length > 0) && (utf8length(new_text) >= uint(max_length)))
 			return false;
 		new_text = new_text.substr(0, cursor) + character + new_text.substr(cursor);
 		if (read_only == false) {
@@ -237,28 +237,30 @@ class nv_form_input: nv_form_control {
 			while (temp_position > 0 && (temp_position >= text.length() || nvform_word_separators .find(text[temp_position - 1]) < 0 && text[temp_position - 1] != "\n"))
 				temp_position--;
 			string word = read_word_from_position(temp_position);
-			if (password_mask != "") {
-				for (uint i = 0; i < word.length(); i++) word[i] = password_mask;
-			}
 			speak(word, echo_flag != textflag_entry_characters_words);
 		}
 		nv_form_input_event e(this);
 		e.character = character;
 		event.fire(e);
 		if (!silent && prevselect) speak(highlight_unselect_speech_text, false);
+		if (@suggestion_manager != null) suggestion_manager.update();
 		return true;
 	}
 	bool edit(const string &in character) {
-		if ((max_length > 0) && (text.length() > max_length))
+		if ((max_length > 0) && (utf8length(text) > uint(max_length)))
 			return false;
 		if (text.length() == 0)
 			return false;
 		if (cursor >= text.length())
 			return false;
-		if (read_only == false)
-			text[cursor] = character;
+		if (read_only == false) {
+			int size = utf8size(text.substr(cursor, 4));
+			text = text.substr(0, cursor) + character + text.substr(cursor + size);
+			cursor += character.length();
+		}
 		if (echo_flag == textflag_entry_characters || echo_flag == textflag_entry_characters_words)
 			speak(input_box_speak(find_appropriate_character(character)), true);
+		if (@suggestion_manager != null) suggestion_manager.update();
 		if (nvform_word_separators .find(character) > -1 && (echo_flag == textflag_entry_words || echo_flag == textflag_entry_characters_words)) {
 			int temp_position = cursor - 1;
 			while (temp_position > 0 && (temp_position >= text.length() || nvform_word_separators .find(text[temp_position - 1]) < 0))
@@ -358,9 +360,7 @@ class nv_form_input: nv_form_control {
 		}
 		if (temp == "")
 			return "Blank";
-		if (password_mask != "")
-			return temp.length() + " characters";
-		return temp;
+		return get_masked_text(temp);
 	}
 	void line_start() {
 		if (cursor == 0) {
@@ -408,13 +408,13 @@ class nv_form_input: nv_form_control {
 				if (sel_end == -1)
 					sel_end = cursor - 1;
 				if (speak_selection_status) speak_selected(text.substr(sel_start, cursor - sel_start));
-				else speak(text.substr(sel_start, cursor - sel_start), true, null);
+				else speak(get_masked_text(text.substr(sel_start, cursor - sel_start)), true, null);
 				cursor = sel_start;
 				return;
 			} else if (cursor == sel_end || cursor - 1 == sel_end) {
 				sel_end = pos - 1;
-				if (speak_selection_status) speak(text.substr(pos, cursor - 1 - pos) + " " + highlight_unselect_speech_text, true, null);
-				else speak(text.substr(pos, cursor - 1 - pos), true, null);
+				if (speak_selection_status) speak_selected(text.substr(pos, cursor - 1 - pos), true);
+				else speak(get_masked_text(text.substr(pos, cursor - 1 - pos)), true, null);
 				cursor = pos;
 				return;
 			}
@@ -458,12 +458,12 @@ class nv_form_input: nv_form_control {
 					sel_start = cursor;
 				sel_end = new_word - 1;
 				if (speak_selection_status) speak_selected(text.substr(cursor, new_word - cursor));
-				else speak(text.substr(cursor, new_word - cursor), true, null);
+				else speak(get_masked_text(text.substr(cursor, new_word - cursor)), true, null);
 				cursor = new_word;
 				return;
 			} else if (cursor == sel_start || cursor - 1 == sel_start) {
-				if (speak_selection_status) speak(text.substr(sel_start, new_word - sel_start) + " " + highlight_unselect_speech_text, true, null);
-				else speak(text.substr(sel_start, new_word - sel_start), true, null);
+				if (speak_selection_status) speak_selected(text.substr(sel_start, new_word - sel_start), true);
+				else speak(get_masked_text(text.substr(sel_start, new_word - sel_start)), true, null);
 				sel_start = new_word;
 				cursor = new_word;
 				return;
@@ -508,7 +508,7 @@ class nv_form_input: nv_form_control {
 				break;
 			}
 		}
-		return text.substr(position, word_end - position);
+		return get_masked_text(text.substr(position, word_end - position));
 	}
 	void highlight_to_field_start() {
 		if (cursor == 0)
@@ -557,7 +557,7 @@ class nv_form_input: nv_form_control {
 			cursor = sel_start;
 		} else if (cursor == sel_end || cursor - 1 == sel_end) {
 			sel_end = line_start;
-			speak(text.substr(sel_end, cursor - sel_end) + " " + highlight_unselect_speech_text, true, null);
+			speak_selected(text.substr(sel_end, cursor - sel_end), true);
 			cursor = sel_end;
 		}
 		if (sel_end < sel_start) {
@@ -566,7 +566,7 @@ class nv_form_input: nv_form_control {
 		}
 	}
 	void highlight_to_line_end(bool continuation = false) {
-		if (cursor >= text.length() - 1)
+		if (text == "" || cursor >= int(text.length()) - 1)
 			return;
 		int line_end = cursor + 1;
 		for (line_end; line_end < text.length(); line_end++) {
@@ -574,7 +574,7 @@ class nv_form_input: nv_form_control {
 				break;
 		}
 		if (sel_end == line_end) {
-			if (!continuation)
+			if (!continuation || line_end >= int(text.length()))
 				return;
 			else {
 				if (text[line_end] == "\r") line_end += 2;
@@ -595,7 +595,7 @@ class nv_form_input: nv_form_control {
 			speak_selected(text.substr(old_cursor, sel_end - old_cursor));
 		} else if (cursor == sel_start || cursor - 1 == sel_start) {
 			sel_start = line_end;
-			speak(text.substr(cursor, line_end - cursor) + " " + highlight_unselect_speech_text, true, null);
+			speak_selected(text.substr(cursor, line_end - cursor), true);
 			cursor = line_end;
 		}
 		if (sel_end < sel_start) {
@@ -730,13 +730,26 @@ class nv_form_input: nv_form_control {
 		cursor = 0;
 		speak_selected(text);
 	}
-	protected void speak_selected(const string &in selection) {
+	string get_masked_text(const string &in t) {
+		if (password_mask == "")
+			return t;
+		int len = utf8length(t);
+		if (len <= 0) return "";
+		if (len == 1) return password_mask;
+		return len + " characters";
+	}
+	protected void speak_selected(const string &in selection, bool unselect = false) {
+		string speech_text = unselect ? highlight_unselect_speech_text : highlight_select_speech_text;
 		if (selection.length() >= 1024 || password_mask != "")
-			speak(utf8length(selection) + " characters " + highlight_select_speech_text);
+			speak(utf8length(selection) + " characters " + speech_text);
 		else
-			speak(selection + " " + highlight_select_speech_text, true);
+			speak(selection + " " + speech_text, true);
 	}
 	void copy_highlighted() {
+		if (password_mask != "") {
+			speak("Cannot copy from a protected field.", true);
+			return;
+		}
 		if (sel_start < 0 || sel_end < 0 || sel_start > sel_end) {
 			speak("Nothing selected", true);
 			return;
@@ -750,6 +763,10 @@ class nv_form_input: nv_form_control {
 			speak("Cannot cut from a read only edit box.", true);
 			return;
 		}
+		if (password_mask != "") {
+			speak("Cannot cut from a protected field.", true);
+			return;
+		}
 		if (sel_start < 0 || sel_end < 0 || sel_start > sel_end) {
 			speak("Nothing selected", true);
 			return;
@@ -760,16 +777,22 @@ class nv_form_input: nv_form_control {
 		delete_highlighted(0, false);
 	}
 	void paste_text() {
+		if (read_only) return;
 		string paste = clipboard_get_text();
+		if (paste == "") {
+			speak("clipboard empty", true);
+			return;
+		}
 		string[]@ paste_single = paste.split("\r\n", false);
 		if (!multiline)
-			paste = paste_single[0];
+			paste = paste_single.length() > 0 ? paste_single[0] : "";
 		paste = paste.replace("\r", "", true);
 		if (paste == "") {
 			speak("clipboard empty", true);
 			return;
 		}
-		if ((max_length > 0) && ((text + paste).length() - (sel_end - sel_start) > max_length)) {
+		int selected_length = (sel_start > -1 && sel_end > -1 && sel_start <= sel_end) ? utf8length(text.substr(sel_start, sel_end - sel_start + 1)) : 0;
+		if ((max_length > 0) && (int(utf8length(text) + utf8length(paste)) - selected_length > max_length)) {
 			speak("clipboard data can't fit", true);
 			return;
 		}
@@ -787,6 +810,10 @@ class nv_form_input: nv_form_control {
 		text = new_text.substr(0, cursor) + paste + new_text.substr(cursor);
 		cursor += paste.length();
 		speak("Text Pasted", true);
+		nv_form_input_event e(this);
+		e.character = paste;
+		event.fire(e);
+		if (@suggestion_manager != null) suggestion_manager.update();
 	}
 	void delete_word_left() {
 		move_word_left(true, false);
@@ -815,6 +842,7 @@ class nv_form_input: nv_form_control {
 			nv_form_input_event e(this);
 			e.deleted = true;
 			event.fire(e);
+			if (@suggestion_manager != null) suggestion_manager.update();
 			return;
 		} else if (from_start == 0 && cursor > 0) {
 			int old_cursor = cursor;
@@ -829,17 +857,17 @@ class nv_form_input: nv_form_control {
 			e.character = deltext;
 			e.deleted = true;
 			event.fire(e);
-		} else if (from_start == 1) {
-			string del_char = "";
-			if (cursor < text.length())
-				del_char = text.substr(cursor, 4);
-			text = text.substr(0, cursor) + text.substr(cursor + utf8size(text.substr(cursor, 1)));
+			if (@suggestion_manager != null) suggestion_manager.update();
+		} else if (from_start == 1 && cursor < text.length()) {
+			string del_char = text.substr(cursor, 4);
+			text = text.substr(0, cursor) + text.substr(cursor + utf8size(del_char));
 			if (speak_deleted)
 				speak(input_box_speak(find_appropriate_character(del_char), true), true);
 			nv_form_input_event e(this);
 			e.character = del_char;
 			e.deleted = true;
 			event.fire(e);
+			if (@suggestion_manager != null) suggestion_manager.update();
 		}
 	}
 	bool select(int sel_start = -1, int sel_end = -1) {
@@ -865,20 +893,28 @@ class nv_form_input: nv_form_control {
 		return col;
 	}
 	bool set_line(int line, int col = 1, bool silent = false) {
-		if (type != ct_input) return false;
-		if (col < 1) col = 1;
-		int max_col = col;
-		int pos = line > 1? nv_string_contains(text, "\n", line -1) : 0;
-		if (pos < 0) {
+		if (type != nv_form_ct_input) return false;
+		if (line < 1) {
 			if (!silent) speak("line number out of range");
 			return false;
 		}
-		int pos2 = nv_string_contains(text, "\n", line);
-		if (pos2 > -1) max_col = pos2 - pos;
-		if (pos==0) col--;
+		if (col < 1) col = 1;
+		int line_start = 0;
+		if (line > 1) {
+			int break_before = nv_string_contains(text, "\n", line - 1);
+			if (break_before < 0) {
+				if (!silent) speak("line number out of range");
+				return false;
+			}
+			line_start = break_before + 1;
+		}
+		int break_after = nv_string_contains(text, "\n", line);
+		int line_end = break_after > -1 ? break_after : text.length();
+		int max_col = line_end - line_start;
 		if (col > max_col) col = max_col;
-		pos += col;
-		cursor = pos;
+		if (col < 1) col = 1;
+		cursor = line_start + col - 1;
+		if (cursor > int(text.length())) cursor = text.length();
 		sel_start = -1;
 		sel_end = -1;
 		if (!silent) speak(read_line(current_line_start_position()), false);
@@ -888,8 +924,8 @@ class nv_form_input: nv_form_control {
 		return __default_text__;
 	}
 	void set_default_text(string v) property {
-		if ((max_length > 0) && (v.length() > max_length))
-			v = v.substr(0, max_length);
+		while ((max_length > 0) && (utf8length(v) > uint(max_length)))
+			v = v.substr(0, utf8prev(v, v.length()));
 		__default_text__ = v;
 		text = v;
 	}
@@ -919,11 +955,12 @@ class nv_form_input: nv_form_control {
 		return true;
 	}
 	bool set_disallowed_chars(const string &in chars, bool use_only_disallowed_chars = false, const string &in char_disallowed_description = "") {
-		if (chars.length() < 1)
-			disallowed_chars.resize(0);
-		else {
-			for (uint i = 0; i < chars.length(); i++)
-				disallowed_chars.insert_last(chars[i]);
+		disallowed_chars.resize(0);
+		for (uint i = 0; i < chars.length(); ) {
+			uint next = utf8next(chars, i);
+			if (next <= i) next = i + 1;
+			disallowed_chars.insert_last(chars.substr(i, next - i));
+			i = next;
 		}
 		this.use_only_disallowed_chars = use_only_disallowed_chars;
 		this.char_disallowed_description = char_disallowed_description;
@@ -933,15 +970,19 @@ class nv_form_input: nv_form_control {
 		if (char.length() < 1)
 			return false;
 		if (search_all) {
-			for (uint i = 0; i < char.length(); i++) {
-				if (disallowed_chars.find(char[i]) < 0 && use_only_disallowed_chars) return true;
-				else if (disallowed_chars.find(char[i]) > -1 && !use_only_disallowed_chars) return true;
+			for (uint i = 0; i < char.length(); ) {
+				uint next = utf8next(char, i);
+				if (next <= i) next = i + 1;
+				string one = char.substr(i, next - i);
+				if (disallowed_chars.find(one) < 0 && use_only_disallowed_chars) return true;
+				else if (disallowed_chars.find(one) > -1 && !use_only_disallowed_chars) return true;
+				i = next;
 			}
 			return false;
 		}
 		return (disallowed_chars.find(char) > -1 && !use_only_disallowed_chars) || (disallowed_chars.find(char) < 0 && use_only_disallowed_chars);
 	}
-	private uint utf8length(const string &in txt) const {
+	protected uint utf8length(const string &in txt) const {
 		if (txt.empty()) return 0;
 		uint length = txt.length(), count = 0;
 		for (uint cursor = 0; length > cursor; count ++)

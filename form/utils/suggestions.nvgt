@@ -1,0 +1,111 @@
+class nv_form_suggestion_manager : nv_utility_form {
+	nv_form@ parent_form;
+	nv_form_input@ owner_input;
+	string[] suggestions;
+	string[] current_matches;
+	nv_form f;
+	nv_form_list_box@ list;
+	bool active = false;
+	string last_spoken_match = "";
+
+	nv_form_suggestion_manager(nv_form@ parent_form, nv_form_input@ owner_input) {
+		@this.parent_form = @parent_form;
+		@this.owner_input = @owner_input;
+	}
+
+	void add_suggestion(const string &in s) {
+		suggestions.insert_last(s);
+	}
+
+	void add_suggestions(const string[] &in s) {
+		for (uint i = 0; i < s.length(); i++) suggestions.insert_last(s[i]);
+	}
+
+	void update() {
+		string text = owner_input.text.lower();
+		current_matches.resize(0);
+		if (text.length() > 0) {
+			for (uint i = 0; i < suggestions.length(); i++) {
+				if (suggestions[i].lower().substr(0, text.length()) == text) {
+					current_matches.insert_last(suggestions[i]);
+				}
+			}
+		}
+
+		if (current_matches.length() > 0) {
+			if (!active) {
+				show();
+			} else {
+				update_list();
+			}
+		}
+		else if (active) {
+			close();
+		}
+	}
+
+	private void show() {
+		active = true;
+		f.create_window("Suggestions", false, false, true); // Silent creation
+		@list = f.add_list("Suggestions", "sug", false);
+		nv_form_button@ cancel_btn = f.add_button("Cancel", "cancel", false, true);
+		@cancel_btn.shortcut = nv_shortcut(KEY_C, alt = true);
+		update_list();
+		@parent_form.nv_utility_form = this;
+	}
+
+	private void update_list() {
+		list.items.resize(0);
+		for (uint i = 0; i < current_matches.length(); i++) {
+			list.add(current_matches[i], "" + i);
+		}
+		list.list_position = 0;
+		if (current_matches[0] != last_spoken_match) {
+			last_spoken_match = current_matches[0];
+			speak(last_spoken_match + "");
+		}
+	}
+
+	void monitor() {
+		// Suggestions monitor doesn't call f.monitor() directly because we want input to stay in the owner_input
+		// Instead, it listens for specific keys redirected from the main form or input
+	}
+
+	bool handle_key(int key) {
+		if (!active) return false;
+		if (key == KEY_DOWN) {
+			if (list.navigate(true)) {
+				speak(list.speak_list_item(list.focused_item));
+			}
+			return true;
+		}
+		if (key == KEY_UP) {
+			if (list.navigate(false)) {
+				speak(list.speak_list_item(list.focused_item));
+			}
+			return true;
+		}
+		if (key == KEY_RETURN || key == KEY_NUMPAD_ENTER || key == KEY_TAB) {
+			nv_form_list_item@ item = list.focused_item;
+			if (@item != null) {
+				owner_input.text = item.text;
+				owner_input.cursor = item.text.length();
+				speak("Selected " + item.text);
+				close();
+				return true;
+			}
+		}
+		if (key == KEY_ESCAPE) {
+			close();
+			speak("Suggestions closed");
+			return true;
+		}
+		return false;
+	}
+
+	void close() {
+		active = false;
+		@parent_form.nv_utility_form = null;
+		f.reset();
+	}
+}

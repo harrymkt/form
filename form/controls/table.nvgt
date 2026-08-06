@@ -1,0 +1,191 @@
+class nv_form_table : nv_form_control {
+	string[] headers;
+	nv_form_table_row@[] rows;
+	int row_index = -1;
+	int col_index = -1;
+	bool speak_position = false;
+	int last_sort_col = -1;
+	bool last_sort_ascending = true;
+	bool pressed = false;
+	nv_form_table(nv_form@ parent, const string &in caption, const string &in id = "", bool speak_position = false) {
+		super(caption, id, nv_form_ct_table, @parent);
+		this.speak_position = speak_position;
+	}
+	void on_fire() {
+		pressed = true;
+	}
+	void set_headers(const string[] &in h) {
+		headers = h;
+		if (col_index == -1 && headers.length() > 0) col_index = 0;
+	}
+	void add_row(const string[] &in data, const string &in id = "") {
+		rows.insert_last(nv_form_table_row(data, id));
+		if (row_index == -1) row_index = 0;
+		if (col_index == -1 && data.length() > 0) col_index = 0;
+	}
+	nv_form_table_row@ get_focused_row() const property {
+		if (rows.length() <= 0 || row_index < 0 || row_index >= rows.length()) return null;
+		return rows[row_index];
+	}
+	bool handle_input() {
+		if (rows.length() == 0) return false;
+		if (key_repeating(KEY_UP)) {
+			if (row_index > 0) {
+				row_index--;
+				speak_cell();
+			}
+			return true;
+		}
+		if (key_repeating(KEY_DOWN)) {
+			if (row_index < rows.length() - 1) {
+				row_index++;
+				speak_cell();
+			}
+			return true;
+		}
+		if (key_repeating(KEY_LEFT)) {
+			if (col_index > 0) {
+				col_index--;
+				speak_cell();
+			}
+			return true;
+		}
+		if (key_repeating(KEY_RIGHT)) {
+			if (col_index + 1 < int(headers.length())) {
+				col_index++;
+				speak_cell();
+			}
+			return true;
+		}
+		if (key_pressed(KEY_H)) {
+			speak_header();
+			return true;
+		}
+		if (key_pressed(KEY_R)) {
+			speak_row();
+			return true;
+		}
+		if (key_pressed(KEY_S)) {
+			bool asc = true;
+			if (last_sort_col == col_index) asc = !last_sort_ascending;
+			sort_by_column(col_index, asc);
+			return true;
+		}
+		if (key_repeating(KEY_HOME)) {
+			row_index = 0;
+			speak_cell();
+			return true;
+		}
+		if (key_repeating(KEY_END)) {
+			row_index = rows.length() - 1;
+			speak_cell();
+			return true;
+		}
+		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || key_pressed(KEY_SPACE)) {
+			fire();
+			return true;
+		}
+		return false;
+	}
+	void speak_cell() {
+		nv_form_table_row@ row = focused_row;
+		if (@row == null) return;
+		string text = "";
+		if (col_index >= 0 && col_index < row.data.length()) {
+			text = row.data[col_index];
+		}
+		string s = text;
+		if (speak_position) {
+			s += "  row " + (row_index + 1) + " of " + rows.length() + ", col " + (col_index + 1) + " of " + headers.length();
+		}
+		speak(s);
+	}
+	void speak_header() {
+		if (col_index >= 0 && col_index < headers.length()) {
+			speak(headers[col_index] + " header");
+		}
+	}
+	void speak_row() {
+		nv_form_table_row@ row = focused_row;
+		if (@row == null) return;
+		string[] bits;
+		for (uint i = 0; i < headers.length(); i++) {
+			string h = headers[i];
+			string d = (i < row.data.length() ? row.data[i] : "");
+			bits.insert_last(h + ": " + d);
+		}
+		speak(join(bits, ", "));
+	}
+	void sort_by_column(int col, bool ascending = true) {
+		if (col < 0 || col >= headers.length() || rows.length() < 2) return;
+		last_sort_col = col;
+		last_sort_ascending = ascending;
+		quicksort(0, rows.length() - 1, col, ascending);
+		speak("Sorted by " + headers[col] + (ascending ? " ascending" : " descending"));
+		row_index = 0;
+		speak_cell();
+	}
+	private void quicksort(int left, int right, int col, bool ascending) {
+		int i = left, j = right;
+		nv_form_table_row@ pivot = rows[(left + right) / 2];
+		while (i <= j) {
+			while (compare(rows[i], pivot, col, ascending) < 0) i++;
+			while (compare(rows[j], pivot, col, ascending) > 0) j--;
+			if (i <= j) {
+				nv_form_table_row@ temp = rows[i];
+				@rows[i] = rows[j];
+				@rows[j] = temp;
+				i++;
+				j--;
+			}
+		}
+		if (left < j) quicksort(left, j, col, ascending);
+		if (i < right) quicksort(i, right, col, ascending);
+	}
+	private int compare(nv_form_table_row@ r1, nv_form_table_row@ r2, int col, bool ascending) {
+		string v1 = (col < r1.data.length() ? r1.data[col] : "");
+		string v2 = (col < r2.data.length() ? r2.data[col] : "");
+		int res = 0;
+		if (is_numeric(v1) && is_numeric(v2)) {
+			double d1 = parse_float(v1);
+			double d2 = parse_float(v2);
+			if (d1 < d2) res = -1;
+			else if (d1 > d2) res = 1;
+		} else {
+			if (v1 < v2) res = -1;
+			else if (v1 > v2) res = 1;
+		}
+		return ascending ? res : -res;
+	}
+	private bool is_numeric(const string &in s) {
+		if (s.empty()) return false;
+		bool dot = false;
+		for (uint i = 0; i < s.length(); i++) {
+			if (s[i] == "-" && i == 0) continue;
+			if (s[i] == ".") {
+				if (dot) return false;
+				dot = true;
+				continue;
+			}
+			if (!s[i].is_digits()) return false;
+		}
+		return true;
+	}
+	string get_fixed_type_last() property {
+		nv_form_table_row@ row = focused_row;
+		if (@row == null) return "empty";
+		string s = "row " + (row_index + 1) + ", " + headers.length() + " columns. ";
+		if (col_index >= 0 && col_index < int(row.data.length()) && col_index < int(headers.length())) {
+			s += headers[col_index] + ": " + row.data[col_index];
+		}
+		return s;
+	}
+}
+class nv_form_table_row {
+	string[] data;
+	string id;
+	nv_form_table_row(const string[] &in data, const string &in id = "") {
+		this.data = data;
+		this.id = id;
+	}
+}

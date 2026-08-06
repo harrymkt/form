@@ -9,19 +9,22 @@ class nv_form_checkbox: nv_form_control {
 		nv_form_control::fire();
 	}
 	string get_fixed_type_last() property {
-		return (state ? "checked" : "not check");
+		return (state ? "checked" : "not checked");
 	}
 	void toggle() {
 		state = !state;
+		event.fire(nv_form_event(this, nv_form_event_checkbox_toggled));
 	}
 	bool check() {
 		if (state) return false;
 		state = true;
+		event.fire(nv_form_event(this, nv_form_event_checkbox_toggled));
 		return true;
 	}
 	bool uncheck() {
 		if (!state) return false;
 		state = false;
+		event.fire(nv_form_event(this, nv_form_event_checkbox_toggled));
 		return true;
 	}
 	bool handle_input() {

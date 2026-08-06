@@ -1,0 +1,60 @@
+class nv_form_context_menu_item {
+	string caption;
+	nv_form_control_callback@ callback;
+	nv_form_context_menu_item(const string &in caption, nv_form_control_callback@ callback) {
+		this.caption = caption;
+		@this.callback = @callback;
+	}
+}
+class nv_form_context_menu : nv_utility_form {
+	nv_form@ parent_form;
+	nv_form_control@ owner_control;
+	nv_form_context_menu_item@[] items;
+	nv_form f;
+	nv_form_list_box@ list;
+	nv_form_context_menu(nv_form@ parent_form, nv_form_control@ owner_control) {
+		@this.parent_form = @parent_form;
+		@this.owner_control = @owner_control;
+	}
+	void add_item(const string &in caption, nv_form_control_callback@ callback) {
+		items.insert_last(nv_form_context_menu_item(caption, @callback));
+	}
+	void show() {
+		if (items.length() == 0 || f.active) return;
+		f.create_window("Context Menu", false, true);
+		@list = f.add_list("Actions", "actions", false);
+		for (uint i = 0; i < items.length(); i++) {
+			list.add(items[i].caption, "" + i);
+		}
+		list.list_position = 0;
+		nv_form_button@ cancel_btn = f.add_button("Cancel", "cancel", false, true);
+		@cancel_btn.shortcut = nv_shortcut(KEY_C, alt = true);
+		cancel_btn.hidden = true;
+		@f.background_callback = parent_form.background_callback;
+		f.focus_control(list, false, false);
+		@parent_form.nv_utility_form = this;
+	}
+	void monitor() {
+		if (!f.monitor()) {
+			close();
+			return;
+		}
+		if (f.is_pressed("cancel")) {
+			close();
+		}
+		else if (list.pressed) {
+			list.pressed = false;
+			int idx = list.list_position;
+			if (idx >= 0 && idx < int(items.length())) {
+				nv_form_control_callback@ cb = items[idx].callback;
+				close();
+				if (@cb != null) cb(owner_control);
+			}
+		}
+	}
+	private void close() {
+		@parent_form.nv_utility_form = null;
+		f.reset();
+		parent_form.focus_control(owner_control);
+	}
+}

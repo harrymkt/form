@@ -1,0 +1,25 @@
+# nv_form_suggestion_manager
+Autocomplete for a text field. Offers a list of entries that start with what the user has typed so far.
+
+`nv_form_suggestion_manager(nv_form@ parent_form, nv_form_input@ owner_input);`
+
+## Arguments:
+- `nv_form@ parent_form`: The form the owning input belongs to.
+- `nv_form_input@ owner_input`: The text field this manager completes.
+
+## Remarks:
+This is an experimental feature of this fork, it is not part of the upstream module.
+
+Assign the manager to the `suggestion_manager` property of an input and everything else is automatic. The input calls `update` whenever its text changes, whether the user typed, deleted, or pasted.
+
+Unlike the other `nv_utility_form` implementations, this one deliberately does not take the input focus. Its `monitor` is empty, and the parent form instead forwards the arrow keys, Enter, Tab and Escape to `handle_key`, so the user keeps typing in the field while the suggestion list is open.
+
+Matching is case insensitive and anchored at the start of the entry. An empty field matches nothing and closes the list.
+
+## Example:
+```
+nv_form_input@ inp = f.add_input("Country", "country");
+@inp.suggestion_manager = nv_form_suggestion_manager(f, inp);
+string[] countries = {"Romania", "Rwanda", "Russia"};
+inp.suggestion_manager.add_suggestions(countries);
+```

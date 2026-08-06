@@ -73,13 +73,13 @@ class nv_form_spin: nv_form_input {
 				cursor = 0;
 				next_line();
 				return true;
-			} else if (keyboard_modifiers & KEYMOD_CTRL != 0 && key_pressed(KEY_HOME)) {
+			} else if (((keyboard_modifiers & KEYMOD_CTRL) != 0) && key_pressed(KEY_HOME)) {
 				unselect(true);
 				text = min;
 				cursor = 0;
 				previous_line();
 				return true;
-			} else if (keyboard_modifiers & KEYMOD_CTRL != 0 && key_pressed(KEY_END)) {
+			} else if (((keyboard_modifiers & KEYMOD_CTRL) != 0) && key_pressed(KEY_END)) {
 				unselect(true);
 				text = max;
 				cursor = 0;

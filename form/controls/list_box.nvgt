@@ -7,6 +7,7 @@ class nv_form_list_box: nv_form_control {
 	bool multinav = true;
 	timer multinavtime;
 	string multichar;
+	bool pressed = false;
 	nv_form_list_box(nv_form@parent, const string &in caption, const string &in id = "", bool allow_multiselect = false, nv_form_list_item@[] items = {}, int max_items = -1, bool speak_position = false) {
 		super(caption, id, nv_form_ct_list, @parent);
 		multiselect = allow_multiselect;
@@ -14,8 +15,11 @@ class nv_form_list_box: nv_form_control {
 		this.max_items = max_items;
 		if (items.length() > 0) this.items.extend(items);
 	}
+	void on_fire() {
+		pressed = true;
+	}
 	nv_form_list_item@get_focused_item() const property {
-		if (items.length() <= 0 || list_position < 0) return null;
+		if (items.length() <= 0 || list_position < 0 || list_position >= int(items.length())) return null;
 		return items[list_position];
 	}
 	string get_focused_item_id() const property {
@@ -64,9 +68,29 @@ class nv_form_list_box: nv_form_control {
 		if (speak_position) f.insert_last((list_position + 1) + " of " + items.length());
 		return join(f, "  ");
 	}
+	int find_multinav_position(const string &in prefix) {
+		if (prefix == "" || items.length() <= 0) return -1;
+		string current_prefix;
+		if (list_position >= 0 && list_position < items.length())
+			current_prefix = items[list_position].text.lower().substr(0, prefix.length());
+		for (int i = list_position; i < items.length(); i++) {
+			if (i < 0 || i >= items.length()) continue;
+			if (i == list_position) continue;
+			if (items[i].text.lower().substr(0, prefix.length()) == prefix) {
+				if (current_prefix == prefix && prefix.length() > 1) return list_position;
+				return i;
+			}
+		}
+		for (uint i = 0; i < items.length(); i++) {
+			if (items[i].text.lower().substr(0, prefix.length()) == prefix) {
+				if (current_prefix == prefix && prefix.length() > 1) return list_position;
+				return i;
+			}
+		}
+		return -1;
+	}
 	bool handle_input() {
 		if (multinav) {
-			string test;
 			if (multinavtime.elapsed > 1000 and multichar != "")
 				multichar = "";
 			string c = get_characters().lower();
@@ -76,41 +100,21 @@ class nv_form_list_box: nv_form_control {
 			}
 			if (multichar != "" and c != "") {
 				multichar = multichar.lower();
-				bool found = false;
-				for (uint i = list_position; i < items.length(); i++) {
-					if (i < 0 || i >= items.length()) continue;
-					if (i == list_position) continue;
-					test = items[i].text;
-					test = test.lower();
-					if (test.substr(0, multichar.length()) == multichar) {
-						if (items[list_position].text.lower().substr(0, multichar.length()) == multichar and multichar.length() > 1) {
-							found = true;
-							break;
-						}
-						set_pos(i, fire_event = true);
-						if (list_position >= 0 && list_position < items.length() && @items[list_position] != null) speak(speak_list_item(items[list_position]));
-						found = true;
-						break;
-					}
+				int position = find_multinav_position(multichar);
+				if (position < 0 && multichar != c) {
+					multichar = c;
+					position = find_multinav_position(multichar);
 				}
-				if (found == false) {
-					multichar = multichar.lower();
-					for (uint i = 0; i < items.length(); i++) {
-						test = items[i].text;
-						test = test.lower();
-						if (test.substr(0, multichar.length()) == multichar) {
-							if ((list_position >= 0 && list_position < items.length()) && items[list_position].text.lower().substr(0, multichar.length()) == multichar and multichar.length() > 1) {
-								found = true;
-								break;
-							}
-							set_pos(i, fire_event = true);
-							if (list_position >= 0 && list_position < items.length() && @items[list_position] != null) speak(speak_list_item(items[list_position]));
-							found = true;
-							break;
-						}
-					}
+				if (position < 0) {
+					multichar = "";
+					return false;
 				}
-				return found;
+				if (position != list_position) {
+					set_pos(position, fire_event = true);
+					if (list_position >= 0 && list_position < items.length() && @items[list_position] != null) speak(speak_list_item(items[list_position]));
+				}
+				else if (list_position >= 0 && list_position < items.length() && @items[list_position] != null) speak(speak_list_item(items[list_position]));
+				return true;
 			}
 		}
 		if (key_repeating(KEY_UP)) {
@@ -145,6 +149,10 @@ class nv_form_list_box: nv_form_control {
 				speak((focused_item.selected ? "Checked" : "Not checked"));
 				return true;
 			}
+		}
+		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER)) {
+			fire();
+			return true;
 		}
 		if (handle_nv_utils(this)) return true;
 		return false;
@@ -195,6 +203,9 @@ class nv_form_list_box: nv_form_control {
 		}
 		@items[item_index] = null;
 		items.remove_at(item_index);
+		if (items.length() <= 0) list_position = -1;
+		else if (list_position >= int(items.length())) list_position = items.length() - 1;
+		else if (list_position > item_index) list_position--;
 		return true;
 	}
 	int get_item_index(const string &in id) {
@@ -264,8 +275,8 @@ class nv_form_list_box: nv_form_control {
 		return speak_list_item(item);
 	}
 	void on_focus_gained() {
-		start_text_input(); // Especially for Android keyboard.
-		get_characters(); // Cleanup any characters that might have been accumulated.
+		start_text_input();
+		get_characters();
 	}
 }
 class nv_form_list_item {

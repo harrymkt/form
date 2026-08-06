@@ -1,0 +1,37 @@
+#include "../form/form.nvgt"
+void main() {
+	nv_form f;
+	f.create_window("Context Menu Test", say_dialog = true);
+	nv_form_button@ btn = f.add_button("Button with Menu", "btn1");
+	@btn.context_menu = nv_form_context_menu(f, btn);
+	btn.context_menu.add_item("Option 1", on_option);
+	btn.context_menu.add_item("Option 2", on_option);
+	nv_form_input@ inp = f.add_input("Input with Menu", "inp1");
+	@inp.context_menu = nv_form_context_menu(f, inp);
+	inp.context_menu.add_item("Clear Text", on_clear);
+	inp.context_menu.add_item("Say Hello", on_hello);
+	nv_form_button@ close_btn = f.add_button("Close", "close", cancel = true);
+	@close_btn.shortcut = nv_shortcut(KEY_C, alt = true);
+	wait(250);
+	speak("Context menu test loaded. Press Shift+F10 or the Application key on the button or input to open their context menus.");
+	while (f.monitor()) {
+		wait(5);
+	}
+}
+bool on_option(nv_form_control@ ctrl) {
+	alert("Context Menu", "You selected an option from the menu attached to: " + ctrl.caption + ". It is: " + ctrl.context_menu.list.focused_item.text);
+	return true;
+}
+bool on_clear(nv_form_control@ ctrl) {
+	nv_form_input@ inp = cast<nv_form_input@>(ctrl);
+	if (@inp != null) {
+		inp.text = "";
+		inp.cursor = 0;
+		speak("Text cleared");
+	}
+	return true;
+}
+bool on_hello(nv_form_control@ ctrl) {
+	speak("Hello from the context menu!");
+	return true;
+}
