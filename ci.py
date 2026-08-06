@@ -1,12 +1,12 @@
+folders = [
+	"form"
+]
+
 import os
 import sys
 import zipfile
 import json
 import uuid
-
-folders = [
-	"form"
-]
 
 EOF_SEP = f"EOF_{uuid.uuid4()}"
 
