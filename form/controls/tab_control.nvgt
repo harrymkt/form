@@ -1,0 +1,149 @@
+class nv_form_tab_control: nv_form_control {
+	private nv_form_tab_page@[] tab_pages(0);
+	private int tab_page_index = 0;
+	bool speak_position = false;
+	nv_form_tab_control(nv_form@parent, const string &in caption, const string &in id = "", bool speak_position = false) {
+		super(caption, id, nv_form_ct_tab_control, @parent);
+		this.speak_position = speak_position;
+	}
+	void ready_index(bool shift_is_down) {
+		if (tab_page_index < 0 || tab_page_index >= tab_pages.length()) return;
+		if (shift_is_down && tab_pages[tab_page_index].controls_count > 0)
+			tab_pages[tab_page_index].control_index = tab_pages[tab_page_index].controls.length();
+		else
+			tab_pages[tab_page_index].control_index = -1;
+	}
+	bool get_is_waiting_form() const property {
+		if (tab_page_index < 0 || tab_page_index >= tab_pages.length()) return false;
+		return @tab_pages[tab_page_index].nv_utility_form != null;
+	}
+	bool set_pos(int index) {
+		if (tab_pages.length() == 0) return false;
+		if (index < 0) index = 0;
+		if (index >= tab_pages.length()) index = tab_pages.length() - 1;
+		tab_page_index = index;
+		return true;
+	}
+	string speak_tab_item(nv_form_tab_page@ value) {
+		if (@value == null) return "";
+		string[] f;
+		f.insert_last(value.name + " tab selected");
+		if (speak_position) f.insert_last((tab_page_index + 1) + " of " + tab_pages.length());
+		return join(f, "  ");
+	}
+	bool handle_input() {
+		if (@parent.current_control != @this) return false;
+		if (tab_page_index > -1 && tab_page_index < tab_pages.length() && tab_pages[tab_page_index].control_index == -1) {
+			if ((key_repeating(KEY_RIGHT) || key_repeating(KEY_DOWN)) && tab_page_index < tab_pages.length() - 1) {
+				tab_pages[tab_page_index].control_index = -1;
+				tab_page_index += 1;
+				speak(speak_tab_item(tab_pages[tab_page_index]));
+				return true;
+			} else if ((key_repeating(KEY_LEFT) || key_repeating(KEY_UP)) && tab_page_index > 0) {
+				tab_pages[tab_page_index].control_index = -1;
+				tab_page_index -= 1;
+				speak(speak_tab_item(tab_pages[tab_page_index]));
+				return true;
+			} else if (key_repeating(KEY_HOME) && tab_pages.length() > 0) {
+				tab_pages[tab_page_index].control_index = -1;
+				set_pos(0);
+				speak(speak_tab_item(tab_pages[tab_page_index]));
+				return true;
+			} else if (key_repeating(KEY_END) && tab_pages.length() > 0) {
+				tab_pages[tab_page_index].control_index = -1;
+				set_pos(tab_pages.length() - 1);
+				speak(speak_tab_item(tab_pages[tab_page_index]));
+				return true;
+			}
+		}
+		if (key_down(KEY_LCTRL) || key_down(KEY_RCTRL)) {
+			if (tab_page_index > -1 && tab_page_index < tab_pages.length()) {
+				if (key_repeating(KEY_TAB)) {
+					bool next = true;
+					if (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT))
+						next = false;
+					bool first_control = tab_pages[tab_page_index].control_index > -1;
+					tab_pages[tab_page_index].control_index = -1;
+					tab_page_index += (next ? 1 : -1);
+					if (tab_page_index >= tab_pages.length())
+						tab_page_index = 0;
+					else if (tab_page_index < 0)
+						tab_page_index = tab_pages.length() - 1;
+					tab_pages[tab_page_index].control_index = -1;
+					if (first_control && tab_pages[tab_page_index].controls_count > 0) {
+						speak(tab_pages[tab_page_index].name + "  property page");
+						tab_pages[tab_page_index].navigate_form(interrupt_previous_speech = false);
+					} else
+						speak(speak_tab_item(tab_pages[tab_page_index]));
+					return true;
+				}
+			}
+		}
+		if (tab_page_index > -1 && tab_page_index < tab_pages.length()) {
+			if (is_waiting_form) {
+				tab_pages[tab_page_index].nv_utility_form.monitor();
+				return true;
+			}
+			if ((tab_pages[tab_page_index].is_last_control || tab_pages[tab_page_index].controls_count == 0) && key_up(KEY_LSHIFT) && key_up(KEY_RSHIFT) && key_repeating(KEY_TAB)) {
+				tab_pages[tab_page_index].control_index = -1;
+				parent.navigate_form();
+				return true;
+			} else if (tab_pages[tab_page_index].control_index > -1 && tab_pages[tab_page_index].is_first_control && (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT)) && key_repeating(KEY_TAB)) {
+				tab_pages[tab_page_index].control_index = -1;
+				parent.speak_current_control();
+				return true;
+			} else if (tab_pages[tab_page_index].control_index == -1 && (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT)) && key_repeating(KEY_TAB)) {
+				parent.navigate_form(false);
+				return true;
+			} else if (tab_pages[tab_page_index].control_index == -1 && (key_up(KEY_LSHIFT) && key_up(KEY_RSHIFT)) && key_repeating(KEY_TAB)) {
+				speak(tab_pages[tab_page_index].name + "  property page");
+				tab_pages[tab_page_index].navigate_form(interrupt_previous_speech = false);
+				return true;
+			}
+			tab_pages[tab_page_index].handle_input();
+			return true;
+		}
+		return false;
+	}
+	void on_focus_gained_immediate() {
+		ready_index(key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT));
+	}
+	void on_focus_gained() {
+		if (tab_page_index > -1 && tab_page_index < tab_pages.length()) {
+			if ((key_down(KEY_RSHIFT) || key_down(KEY_LSHIFT)) && tab_pages[tab_page_index].controls_count > 0) {
+				nv_form_control@ ctrl = tab_pages[tab_page_index].find_next_control(false);
+				tab_pages[tab_page_index].focus_control(ctrl, false, false);
+			}
+		}
+	}
+	string get_control_info() {
+		if (tab_page_index > -1 && tab_page_index < tab_pages.length()) {
+			if (tab_pages[tab_page_index].control_index == -1)
+				return speak_tab_item(tab_pages[tab_page_index]);
+			else
+				return tab_pages[tab_page_index].name + "  property page  ";
+		}
+		return "";
+	}
+	string get_str() property {
+		if (tab_page_index > -1 && tab_page_index < tab_pages.length() && tab_pages[tab_page_index].control_index != -1) return get_control_info();
+		else return nv_form_control::get_str();
+	}
+	nv_form_tab_page@ add_tab_page(const string &in caption) {
+		nv_form_tab_page tp(caption);
+		add_tab_page(tp);
+		return tp;
+	}
+	void add_tab_page(nv_form_tab_page@ tp) {
+		tab_pages.insert_last(tp);
+	}
+}
+class nv_form_tab_page: nv_form {
+	string name;
+	nv_form_tab_page(const string &in name) {
+		this.name = name;
+		super();
+		active = true;
+		@shortcut = nv_shortcut_manager();
+	}
+}

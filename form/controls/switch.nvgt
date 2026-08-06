@@ -1,0 +1,84 @@
+class nv_form_switch: nv_form_control {
+	nv_form_switch_item@[]items;
+	int index = -1;
+	nv_form_switch(nv_form@parent, const string &in caption, const string &in id = "", nv_form_switch_item@[] items = {}) {
+		super(caption, id, nv_form_ct_switch, @parent);
+		if (items.length() > 0) this.items.extend(items);
+	}
+	nv_form_switch_item@get_focused_item() const property {
+		if (items.length() <= 0 || index < 0) return null;
+		return items[index];
+	}
+	bool get_next() property {
+		if (items.length() <= 0) {
+			parent.error(nv_form_error_switch_empty);
+			return false;
+		}
+		int x = index;
+		x ++;
+		if (x < 0) x = items.length() - 1;
+		if (x >= items.length()) x = 0;
+		return set_pos(x);
+	}
+	bool set_pos(int value) {
+		if (items.length() <= 0) {
+			parent.error(nv_form_error_switch_empty);
+			return false;
+		}
+		if (value < 0) value = 0;
+		if (value >= items.length()) value = items.length() - 1;
+		index = value;
+		return true;
+	}
+	bool handle_input() {
+		if (key_repeating(KEY_SPACE)) {
+			bool nav = next;
+			if (nav) speak(focused_item.text);
+			return true;
+		}
+		return false;
+	}
+	string get_fixed_type_last() property {
+		nv_form_switch_item@item = focused_item;
+		if (@item == null) return "";
+		return item.text;
+	}
+	bool add(const string &in item, const string &in id = "") {
+		items.insert_last(nv_form_switch_item(item, id));
+		return true;
+	}
+	void add_items(const string[]@ items) {
+		if (@items == null || items.length() <= 0) return;
+		for (uint i = 0; i < items.length(); i += 1) add(items[i], items[i]);
+	}
+	bool delete (const string &in id) {
+		if (items.length() <= 0) {
+			parent.error(nv_form_error_list_empty);
+			return false;
+		}
+		int item_index = get_item_index(id);
+		if (item_index == -1) {
+			parent.error(nv_form_error_invalid_value);
+			return false;
+		}
+		@items[item_index] = null;
+		items.remove_at(item_index);
+		return true;
+	}
+	int get_item_index(const string &in id) {
+		if (id.empty()) return -1;
+		for (uint i = 0; i < items.length(); i += 1) {
+			if (items[i].id.empty()) continue;
+			if (items[i].id == id)
+				return i;
+		}
+		return -1;
+	}
+}
+class nv_form_switch_item {
+	string text, id;
+	nv_form_switch_item(const string &in text, const string &in id) {
+		this.text = text;
+		this.id = id;
+	}
+}

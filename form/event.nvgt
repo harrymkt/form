@@ -1,0 +1,28 @@
+class nv_form_event_dispatcher {
+	nv_form_event_handler@ v;
+	void add(nv_form_event_handler@ cb) {
+		@v = @cb;
+	}
+	void fire(nv_form_event@ event) {
+		if (@v == null) return;
+		v(event);
+	}
+}
+class nv_form_event {
+	nv_form_event_type type;
+	nv_form_control@ ctrl;
+	nv_form_event(nv_form_control@ ctrl, nv_form_event_type type) {
+		@this.ctrl = @ctrl;
+		this.type = type;
+	}
+}
+enum nv_form_event_type {
+	nv_form_event_none = 0,
+	nv_form_event_focus_gained,
+	nv_form_event_focus_lost,
+	nv_form_event_checkbox_toggled,
+	nv_form_event_slider_changed,
+	nv_form_event_switch_changed,
+	nv_form_event_input,
+	nv_form_event_list
+}

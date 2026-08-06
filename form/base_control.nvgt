@@ -1,0 +1,96 @@
+abstract class nv_form_control {
+	int type;
+	string custom_type = "";
+	string caption;
+	string id;
+	protected nv_shortcut@ __shortcut = null;
+	nv_form@parent;
+	bool speak_shortcut = true, autoactivate = false;
+	bool hidden = false, enabled = true;
+	bool enable_go_line = true, enable_search = true;
+	nv_form_control_callback@callback = null;
+	nv_form_event_dispatcher event;
+	nv_form_control(const string &in caption, const string &in id, int type, nv_form@parent) {
+		this.caption = caption;
+		this.type = type;
+		this.id = id;
+		@this.parent = parent;
+		if (@parent.default_event_handler != null) event.add(parent.default_event_handler);
+	}
+	~nv_form_control() {
+		rm_shortcut();
+	}
+	nv_shortcut@ shortcut {
+		get const {
+			return __shortcut;
+		} set {
+			rm_shortcut();
+			@__shortcut = value;
+			if (@parent.shortcut != null && @value != null) parent.shortcut.add(value);
+		}
+	}
+	bool rm_shortcut() {
+		if (@parent != null && @parent.shortcut != null) {
+			int x = parent.shortcut.shortcuts.find_by_ref(shortcut);
+			if (x < 0) return false;
+			parent.shortcut.shortcuts.remove_at(x);
+			return true;
+		}
+		return false;
+	}
+	bool hide() {
+		if (hidden) return false;
+		hidden = true;
+		return true;
+	}
+	bool unhide() {
+		if (!hidden) return false;
+		hidden = false;
+		return true;
+	}
+	bool handle_input() { return false; }
+	bool monitor() { return false;}
+	void fire() {
+		if (!enabled) return;
+		bool ok = true;
+		if (@callback != null) ok = callback(this);
+		if (!ok) return;
+		string i = get_control_info();
+		if (i.empty()) i = fixed_type_first;
+		if (i.empty()) i = fixed_type_last;
+		if (!i.empty()) speak(i);
+		on_fire();
+	}
+	void on_fire() { }
+	void on_focus_gained_immediate() { }
+	void on_focus_gained() { }
+	string get_control_info() {
+		return "";
+	}
+	string get_fixed_type_first() property { return ""; }
+	string get_fixed_type_last() property { return ""; }
+	bool check_shortcut() {
+		if (@shortcut == null) return false;
+		return parent.shortcut.is_pressed(shortcut);
+	}
+	bool shortcut_focus() {
+		if (autoactivate) {
+			fire();
+			return true;
+		}
+		return focus();
+	}
+	bool focus(bool quiet = false, bool interrupt_previous_speech = true) {
+		return parent.focus_control(this, quiet, interrupt_previous_speech);
+	}
+	string get_str() property {
+		string[] texts = {caption, parent.get_fixed_type(this)};
+		if (!enabled) texts.insert_last(" unavailable");
+		if (@shortcut != null && speak_shortcut) texts.insert_last(shortcut.name);
+		if (!parent.speak_control_attributes_separately) {
+			string v = get_control_info();
+			if (v != "") texts.insert_last(v);
+		}
+		return join(texts, "  ");
+	}
+}

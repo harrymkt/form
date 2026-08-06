@@ -1,0 +1,101 @@
+class nv_form_spin: nv_form_input {
+	double __min = 0, __max = 100, step = 1, page = 10;
+	nv_form_spin(nv_form@parent, const string &in caption, const string &in id = "", double min = 0, double max = 100, double step = 1, double page = 0) {
+		super(@parent, caption, id);
+		type = nv_form_ct_spin;
+		__min = min;
+		__max = max;
+		this.step = step;
+		this.page = page;
+		set_chars();
+		if (this.page <= 0) this.page = this.step * 10;
+		default_text = min;
+	}
+	void set_chars() {
+		string chars = "0123456789";
+		if (min < 0) chars += "-";
+		if (string(step).find(".") > -1) chars += ".";
+		set_disallowed_chars(chars, true);
+	}
+	double min {
+		get const {
+			return __min;
+		}
+		set {
+			__min = value;
+			set_chars();
+		}
+	}
+	double max {
+		get const {
+			return __max;
+		}
+		set {
+			__max = value;
+			set_chars();
+		}
+	}
+	bool handle_input() {
+		if (!read_only) {
+			if (key_repeating(KEY_UP)) {
+				double t = parse_float(text) + this.step;
+				if (text == "") t = min;
+				if (t > max) t = max;
+				unselect(true);
+				text = t;
+				cursor = 0;
+				previous_line();
+				return true;
+			} else if (key_repeating(KEY_DOWN)) {
+				double t = parse_float(text) - step;
+				if (text == "") t = min;
+				if (t < min) t = min;
+				unselect(true);
+				text = t;
+				cursor = 0;
+				next_line();
+				return true;
+			} else if (key_repeating(KEY_PAGEUP)) {
+				double t = parse_float(text) + page;
+				if (text == "") t = min;
+				if (t > max) t = max;
+				unselect(true);
+				text = t;
+				cursor = 0;
+				previous_line();
+				return true;
+			} else if (key_repeating(KEY_PAGEDOWN)) {
+				double t = parse_float(text) - page;
+				if (text == "") t = min;
+				if (t < min) t = min;
+				unselect(true);
+				text = t;
+				cursor = 0;
+				next_line();
+				return true;
+			} else if (keyboard_modifiers & KEYMOD_CTRL != 0 && key_pressed(KEY_HOME)) {
+				unselect(true);
+				text = min;
+				cursor = 0;
+				previous_line();
+				return true;
+			} else if (keyboard_modifiers & KEYMOD_CTRL != 0 && key_pressed(KEY_END)) {
+				unselect(true);
+				text = max;
+				cursor = 0;
+				next_line();
+				return true;
+			}
+		}
+		return nv_form_input::handle_input();
+	}
+	double get_output() const property {
+		double d = parse_double(text);
+		if (d < min) d = min;
+		if (d > max) d = max;
+		return d;
+	}
+	void on_focus_gained_immediate() {
+		text = output;
+	}
+}

@@ -1,0 +1,22 @@
+class nv_form_link: nv_form_control {
+	bool pressed;
+	string url;
+	nv_form_link(nv_form@parent, const string &in caption, const string &in url, const string &in id = "", bool pressed = false) {
+		super(caption, id, nv_form_ct_link, @parent);
+		this.pressed = pressed;
+		this.url = url;
+	}
+	bool monitor() { return pressed; }
+	void fire() {
+		pressed = true;
+		urlopen(url);
+		nv_form_control::fire();
+	}
+	bool handle_input() {
+		if (key_pressed(KEY_SPACE) || key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER)) {
+			fire();
+			return true;
+		}
+		return false;
+	}
+}

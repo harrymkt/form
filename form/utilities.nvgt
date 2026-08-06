@@ -1,0 +1,200 @@
+string get_nv_form_control_type_string(int ct) {
+	switch (ct) {
+		case nv_form_ct_button: return "button";
+		case nv_form_ct_input: return "edit";
+		case nv_form_ct_spin: return "spin edit";
+		case nv_form_ct_checkbox: return "check box";
+		case nv_form_ct_progress: return "progress bar";
+		case nv_form_ct_list: return "list";
+		case nv_form_ct_slider: return "slider";
+		case nv_form_ct_keyboard_area: return "keyboard area";
+		case nv_form_ct_link: return "link";
+		case nv_form_ct_switch: return "switch";
+		case nv_form_ct_tab_control: return "Tab control";
+		case nv_form_ct_treeview: return "tree view";
+		default: return "";
+	}
+}
+// utility_form interface used for search and go-to dialogs.
+interface nv_utility_form {
+	void monitor();
+}
+class nv_go_to_index : nv_utility_form {
+	nv_form@ parent;
+	nv_form_control@ ctrl;
+	nv_form f;
+	nv_form_input@ f_index, f_col;
+	nv_form_button@ f_ok, f_cancel;
+	nv_go_to_index(nv_form@ parent, nv_form_control@ control) {
+		@this.parent = @parent;
+		@ctrl = @control;
+		nv_form_input@ ctrl_input = cast < nv_form_input@ > (ctrl);
+		nv_form_list_box@ ctrl_list = cast < nv_form_list_box@ > (ctrl);
+		if (@ctrl_list == null && @ctrl_input == null) return;
+		else if ((@ctrl_input != null && ctrl_input.text == "") || (@ctrl_list != null && ctrl_list.items.length() < 1)) return;
+		int current = 1;
+		string wmsg = "Go to line";
+		string lnmsg = "Line number";
+		if (@ctrl_input != null) current = ctrl_input.get_line_number();
+		else if (@ctrl_list != null) {
+			current = ctrl_list.list_position + 1;
+			wmsg = "Go to index";
+			lnmsg = "Item number";
+		}
+		f.create_window(wmsg, false, true);
+		@f_index = nv_form_input(f, lnmsg, "ln");
+		f_index.default_text = current;
+		f_index.select(0);
+		f_index.enable_go_line = false;
+		f_index.enable_search = false;
+		f.add_control(f_index);
+		nv_form_control@ index_to_focus = f_index;
+		if (@ctrl_input != null) {
+			@f_col = nv_form_input(f, "Line column", "lc");
+			f_col.default_text = ctrl_input.get_line_column();
+			f_col.select(0);
+			f_col.enable_go_line = false;
+			f_col.enable_search = false;
+			f.add_control(f_col);
+			if (!ctrl_input.multiline) {
+				@index_to_focus = f_col;
+				f_index.hide(); // Disable line number
+			}
+		}
+		@f_ok = f.add_button("Ok", "ok", true);
+		@f_cancel = f.add_button("Cancel", "cancel", false, true);
+		@f.background_callback = parent.background_callback;
+		f.focus_control(index_to_focus, false, false);
+		@parent.nv_utility_form = this;
+	}
+	void monitor() {
+		if (!f.monitor()) {
+			parent.focus_control(ctrl);
+			@parent.nv_utility_form = null;
+			return;
+		}
+		nv_form_input@ ctrl_input = cast < nv_form_input@ > (ctrl);
+		nv_form_list_box@ ctrl_list = cast < nv_form_list_box@ > (ctrl);
+		if (f.is_pressed(f_cancel)) {
+			parent.focus_control(ctrl);
+			@parent.nv_utility_form = null;
+			return;
+		} else if (f.is_pressed(f_ok)) {
+			string idx = f_index.text;
+			if (!idx.is_digits() or idx.substr(0, 1) == "0") {
+				speak("enter a positive number");
+				f.focus_control(f_index, false, false);
+				return;
+			}
+			if (@ctrl_list != null) {
+				if (!ctrl_list.set_pos(parse_int(idx) - 1, false)) {
+					speak("Invalid item number");
+					f.focus_control(f_index, false, false);
+					return;
+				}
+				@parent.nv_utility_form = null;
+				parent.focus_control(ctrl);
+				return;
+			}
+			string col = f_col.text;
+			if (!col.is_digits()) {
+				speak("enter a positive number");
+				f.focus_control(f_col, false, false);
+				return;
+			}
+			if (!ctrl_input.set_line(parse_int(idx), parse_int(col))) {
+				speak("invalid line number!");
+				f.focus_control(f_index, false, false);
+			} else {
+				@parent.nv_utility_form = null;
+				parent.focus_control(ctrl);
+			}
+		}
+		return ;
+	}
+}
+class nv_search_for : nv_utility_form {
+	nv_form@ parent;
+	nv_form_control@ ctrl;
+	nv_form f;
+	nv_form_input@ f_text;
+	nv_form_button@ f_next, f_prev, f_cancel;
+	nv_search_for(nv_form@ parent, nv_form_control@ control) {
+		@this.parent = @parent;
+		@ctrl = @control;
+		nv_form_input@ ctrl_input = cast < nv_form_input@ > (ctrl);
+		nv_form_list_box@ ctrl_list = cast < nv_form_list_box@ > (ctrl);
+		if (@ctrl_list == null && @ctrl_input == null) return;
+		else if ((@ctrl_input != null && ctrl_input.text == "") || (@ctrl_list != null && ctrl_list.items.length() < 1)) return;
+		string current = "";
+		if (parent.nv_utility_form_data.exists("last_search")) parent.nv_utility_form_data.get("last_search", current);
+		string wmsg = "Search for text";
+		string lnmsg = "Text to search";
+		if (@ctrl_list != null)
+			wmsg = "Search for item";
+		f.create_window(wmsg, false, true);
+		@f_text = f.add_input(lnmsg, "ln", current, "", 256);
+		f_text.select(0);
+		f_text.enable_go_line = false;
+		f_text.enable_search = false;
+		@f_next = f.add_button("find next", "next", true);
+		@f_next.shortcut = nv_shortcut(KEY_N, alt = true);
+		@f_prev = f.add_button("find previous", "prev");
+		@f_prev.shortcut = nv_shortcut(KEY_P, alt = true);
+		@f_cancel = f.add_button("cancel", "cancel", false, true);
+		@f.background_callback = parent.background_callback;
+		f.focus_control(f_text, false, false);
+		@parent.nv_utility_form = this;
+	}
+	void monitor() {
+		if (!f.monitor()) {
+			parent.focus_control(ctrl);
+			@parent.nv_utility_form = null;
+			return;
+		}
+		nv_form_input@ ctrl_input = cast < nv_form_input@ > (ctrl);
+		nv_form_list_box@ ctrl_list = cast < nv_form_list_box@ > (ctrl);
+		bool nv_search_forward = f.is_pressed(f_next);
+		if (f.is_pressed(f_cancel)) {
+			parent.focus_control(ctrl);
+			@parent.nv_utility_form = null;
+			return;
+		} else if (nv_search_forward or f.is_pressed(f_prev)) {
+			string text = f_text.text;
+			if (text == "") {
+				speak("enter some text to search for");
+				f.focus_control(f_text, false, false);
+				return;
+			}
+			if (!parent.search(ctrl, text, nv_search_forward ? 1 : -1)) {
+				speak("nothing found");
+				f.focus_control(f_text, false, false);
+			} else {
+				@parent.nv_utility_form = null;
+				parent.nv_utility_form_data.set("last_search", text);
+			}
+			return;
+		}
+	}
+}
+bool handle_nv_utils(nv_form_control@ ctrl) {
+	// This handles utilities, especially go-to index and search, to make it not having to add the key presses over and over.
+	if (@ctrl == null) return false;
+	int[] supported_types = {nv_form_ct_list, nv_form_ct_input};
+	if (supported_types.find(ctrl.type) < 0) return false;
+	if (keyboard_modifiers & KEYMOD_CTRL != 0 && key_pressed(KEY_G) && ctrl.enable_go_line) {
+		nv_go_to_index(ctrl.parent, ctrl);
+		return true;
+	} else if (keyboard_modifiers & KEYMOD_CTRL != 0 && key_pressed(KEY_F) && ctrl.enable_go_line) {
+		nv_search_for(ctrl.parent, ctrl);
+		return true;
+	} else if (key_repeating(KEY_F3)) {
+		string last_search = "";
+		if (ctrl.parent.nv_utility_form_data.get("last_search", last_search))
+			ctrl.parent.search(ctrl, last_search, keyboard_modifiers & KEYMOD_SHIFT == 0 ? 1 : -1, false);
+		else
+			nv_search_for(ctrl.parent, ctrl);
+		return true;
+	}
+	return false;
+}

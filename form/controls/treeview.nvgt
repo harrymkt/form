@@ -1,0 +1,194 @@
+class nv_form_tree_node {
+	string text;
+	string id;
+	int level;
+	bool expanded;
+	nv_form_tree_node@ parent;
+	nv_form_tree_node@[] nodes;
+	nv_form_tree_node(const string &in text, const string &in id = "", int level = 0, nv_form_tree_node@ parent = null) {
+		this.text = text;
+		this.id = id;
+		this.level = level;
+		expanded = false;
+		@this.parent = parent;
+	}
+	nv_form_tree_node@ add(const string &in text, const string &in id = "") {
+		nv_form_tree_node child(text, id, this.level + 1, @this);
+		nodes.insert_last(child);
+		return child;
+	}
+	int get_item_index(const string &in id) const {
+		if (nodes.length() < 1) return -1;
+		for (uint i = 0; i < nodes.length(); i++) {
+			if (nodes[i].id == id) return i;
+		}
+		return -1;
+	}
+	bool remove(const string &in id) {
+		int x = get_item_index(id);
+		if (x < 0) return false;
+		@nodes[x] = null;
+		nodes.remove_at(x);
+		return true;
+	}
+	bool get_has_nodes() const property {
+		return nodes.length() > 0;
+	}
+	string[] get_ids() const property {
+		string[] f;
+		if (id != "") f.insert_last(id);
+		if (@parent != null) f.insert(0, parent.ids);
+		return f;
+	}
+	string full_id(const string &in sep) const {
+		return join(ids, sep);
+	}
+}
+class nv_form_treeview : nv_form_control {
+	nv_form_tree_node@[] nodes;
+	nv_form_tree_node@[] visible_nodes;
+	int pos = -1;
+	nv_form_treeview(nv_form@ parent, const string &in caption, const string &in id = "") {
+		super(caption, id, nv_form_ct_treeview, @parent);
+	}
+	int get_item_index(const string &in id) const {
+		if (nodes.length() < 1) return -1;
+		for (uint i = 0; i < nodes.length(); i++) {
+			if (nodes[i].id == id) return i;
+		}
+		return -1;
+	}
+	int get_visible_item_index(const string &in id) const {
+		if (visible_nodes.length() < 1) return -1;
+		for (uint i = 0; i < visible_nodes.length(); i++) {
+			if (visible_nodes[i].id == id) return i;
+		}
+		return -1;
+	}
+	nv_form_tree_node@ add(const string &in text, const string &in id = "") {
+		nv_form_tree_node node(text, id, 0, null);
+		nodes.insert_last(node);
+		rebuild();
+		return node;
+	}
+	bool remove(const string &in id) {
+		int x = get_item_index(id);
+		if (x < 0) return false;
+		@nodes[x] = null;
+		nodes.remove_at(x);
+		rebuild();
+		return true;
+	}
+	void rebuild() {
+		nv_form_tree_node@ current_focused = get_focused_node();
+		visible_nodes.resize(0);
+		for (uint i = 0; i < nodes.length(); i++) {
+			add_node_to_visible_recursive(nodes[i]);
+		}
+		pos = -1;
+		if (@current_focused != null) {
+			for (uint i = 0; i < visible_nodes.length(); i++) {
+				if (visible_nodes[i].id == current_focused.id) {
+					pos = i;
+					break;
+				}
+			}
+		}
+	}
+	void add_node_to_visible_recursive(nv_form_tree_node@ node) {
+		if (@node == null) return;
+		visible_nodes.insert_last(node);
+		if (node.expanded && node.has_nodes) {
+			for (uint i = 0; i < node.nodes.length(); i++) {
+				add_node_to_visible_recursive(node.nodes[i]);
+			}
+		}
+	}
+	nv_form_tree_node@ get_focused_node() const property {
+		if (pos < 0 || pos >= visible_nodes.length()) return null;
+		return visible_nodes[pos];
+	}
+	string get_focused_node_id() const property {
+		nv_form_tree_node@ node = focused_node;
+		if (@node == null) return "";
+		return node.id;
+	}
+	bool handle_input() {
+		if (visible_nodes.length() == 0) return false;
+		nv_form_tree_node@ node = focused_node;
+		if (key_repeating(KEY_DOWN)) {
+			if (pos < visible_nodes.length() - 1) {
+				pos++;
+				speak_current_node();
+				return true;
+			}
+		}
+		if (key_repeating(KEY_UP)) {
+			if (pos > 0) {
+				pos--;
+				speak_current_node();
+				return true;
+			}
+		}
+		if (key_pressed(KEY_RIGHT) && @node != null) {
+			if (node.has_nodes) {
+				if (!node.expanded) {
+					node.expanded = true;
+					rebuild();
+					speak("expanded");
+					return true;
+				} else {
+					if (pos < visible_nodes.length() - 1) {
+						pos++;
+						speak_current_node();
+						return true;
+					}
+				}
+			}
+		}
+		if (key_pressed(KEY_LEFT) && @node != null) {
+			if (node.has_nodes && node.expanded) {
+				node.expanded = false;
+				rebuild();
+				speak("collapsed");
+				return true;
+			} else if (@node.parent != null) {
+				nv_form_tree_node@ p = node.parent;
+				for (uint i = 0; i < visible_nodes.length(); i++) {
+					if (visible_nodes[i].id == p.id) {
+						pos = i;
+						speak_current_node();
+						return true;
+					}
+				}
+			}
+		}
+		if (key_repeating(KEY_HOME)) {
+			pos = 0;
+			speak_current_node();
+			return true;
+		}
+		if (key_repeating(KEY_END)) {
+			pos = visible_nodes.length() - 1;
+			speak_current_node();
+			return true;
+		}
+		return false;
+	}
+	void speak_current_node() {
+		string t = node_str(focused_node);
+		if (t != "") speak(t);
+	}
+	string node_str(nv_form_tree_node@ node) const {
+		if (@node == null) return "";
+		string state = "";
+		if (node.has_nodes) {
+			state = node.expanded ? "expanded" : "collapsed";
+		}
+		string info = node.text + "  " + state + "  level " + node.level;
+		return info;
+	}
+	string get_control_info() {
+		return node_str(focused_node);
+	}
+}

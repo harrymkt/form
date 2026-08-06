@@ -1,0 +1,75 @@
+class nv_form_progress_bar: nv_form_control {
+	double min_value, max_value, cur_value;
+	double update_interval = 0.05;
+	double last_spoken_value = -1;
+	bool speak_progress_updates = true, beep_progress_updates = true;
+	nv_form_progress_bar(nv_form@parent, const string &in caption, const string &in id = "", double min_value = 0.0, double max_value = 100.0, double initial_value = 0.0) {
+		super(caption, id, nv_form_ct_progress, @parent);
+		this.min_value = min_value;
+		this.max_value = max_value;
+		cur_value = initial_value;
+		clamp_value();
+	}
+	private sound@ generate_progress_tone(double duration = 0.2, double min_freq = 220.0, double max_freq = 880.0) {
+		#if_not plugin_legacy_sound
+		tone_synth@synth = tone_synth();
+		if (@synth == null) return null;
+		double percent = percentage / 100.0;
+		if (percent < 0.0) percent = 0.0;
+		if (percent > 1.0) percent = 1.0;
+		double freq = min_freq + (max_freq - min_freq) * percent;
+		synth.reset();
+		synth.waveform_type = 3;
+		synth.allow_silent_output = false;
+		synth.volume = 0.8;
+		synth.pan = 0.0;
+		if (!synth.freq(freq, duration)) return null;
+		return synth.write_wave_sound();
+		#endif
+		#if plugin_legacy_sound
+		return null;
+		#endif
+	}
+	void clamp_value() {
+		if (value < min_value) value = min_value;
+		if (value > max_value) value = max_value;
+	}
+	void set_value(double v) property {
+		if (v < min_value || v > max_value) {
+			parent.error(nv_form_error_invalid_value);
+			return;
+		}
+		bool should_speak = abs(v - last_spoken_value) >= update_interval;
+		cur_value = v;
+		if (should_speak) {
+			last_spoken_value = v;
+			report_progress();
+		}
+	}
+	double get_value() property {
+		return cur_value;
+	}
+	double get_percentage() property {
+		if (max_value <= min_value) return 0.0;
+		return ((value - min_value) / (max_value - min_value)) * 100.0;
+	}
+	bool handle_input() {
+		if (key_pressed(KEY_UP) || key_pressed(KEY_DOWN)) {
+			speak(percentage + " percent", true);
+			return true;
+		}
+		return nv_form_control::handle_input();
+	}
+	void report_progress() {
+		if (speak_progress_updates) speak(percentage + " percent", false);
+		if (beep_progress_updates) {
+			if (@beepsound != null and beepsound.playing) beepsound.stop();
+			@beepsound = generate_progress_tone();
+			if (@beepsound != null) beepsound.play();
+		}
+	}
+	string get_control_info() {
+		return percentage + " percent";
+	}
+	private sound@beepsound;
+}
