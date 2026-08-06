@@ -5,7 +5,6 @@ pre/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.json
 *.py[co]
 *$py.class
 
