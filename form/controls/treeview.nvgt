@@ -49,7 +49,7 @@ class nv_form_treeview : nv_form_control {
 	nv_form_tree_node@[] visible_nodes;
 	int pos = -1;
 	nv_form_treeview(nv_form@ parent, const string &in caption, const string &in id = "") {
-		super(caption, id, nv_form_ct_treeview, @parent);
+		super(caption, id, NV_FORM_CT_TREEVIEW, @parent);
 	}
 	int get_item_index(const string &in id) const {
 		if (nodes.length() < 1) return -1;

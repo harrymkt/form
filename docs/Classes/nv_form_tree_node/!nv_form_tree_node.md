@@ -21,5 +21,3 @@ A single node of an `nv_form_treeview`.
 
 ## Remarks:
 You rarely construct these directly. `nv_form_treeview::add` creates root nodes and `nv_form_tree_node::add` creates children, both filling in the level and the parent for you.
-
-Do not confuse this with `nv_form_tree_item`, which belongs to the separate `nv_form_tree_view` control.

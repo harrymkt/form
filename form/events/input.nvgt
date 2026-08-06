@@ -2,6 +2,6 @@ class nv_form_input_event: nv_form_event {
 	string character;
 	bool deleted = false;
 	nv_form_input_event(nv_form_control@ ctrl) {
-		super(ctrl, nv_form_event_input);
+		super(ctrl, NV_FORM_EVENT_INPUT);
 	}
 }

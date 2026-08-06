@@ -2,7 +2,7 @@ class nv_form_spin: nv_form_input {
 	double __min = 0, __max = 100, step = 1, page = 10;
 	nv_form_spin(nv_form@parent, const string &in caption, const string &in id = "", double min = 0, double max = 100, double step = 1, double page = 0) {
 		super(@parent, caption, id);
-		type = nv_form_ct_spin;
+		type = NV_FORM_CT_SPIN;
 		__min = min;
 		__max = max;
 		this.step = step;

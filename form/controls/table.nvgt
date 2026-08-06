@@ -8,7 +8,7 @@ class nv_form_table : nv_form_control {
 	bool last_sort_ascending = true;
 	bool pressed = false;
 	nv_form_table(nv_form@ parent, const string &in caption, const string &in id = "", bool speak_position = false) {
-		super(caption, id, nv_form_ct_table, @parent);
+		super(caption, id, NV_FORM_CT_TABLE, @parent);
 		this.speak_position = speak_position;
 	}
 	void on_fire() {

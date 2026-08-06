@@ -12,13 +12,13 @@ class nv_form_input: nv_form_control {
 	bool overwrite = false;
 	bool enable_delete = true;
 	string delete_disabled_message = "This input has disabled deletion";
-	int echo_flag = textflag_entry_characters;
-	uint8 clipboard_flags = nv_clipboard_flag_copy | nv_clipboard_flag_cut | nv_clipboard_flag_paste;
+	int echo_flag = TEXTFLAG_ENTRY_CHARACTERS;
+	uint8 clipboard_flags = NV_CLIPBOARD_FLAG_COPY | NV_CLIPBOARD_FLAG_CUT | NV_CLIPBOARD_FLAG_PASTE;
 	string[] disallowed_chars;
 	bool use_only_disallowed_chars = false;
 	string char_disallowed_description = "";
 	nv_form_input(nv_form@parent, const string &in caption, const string &in id = "") {
-		super(caption, id, nv_form_ct_input, @parent);
+		super(caption, id, NV_FORM_CT_INPUT, @parent);
 		echo_flag = this.parent.keyboard_echo;
 	}
 	string get_control_info() {
@@ -73,11 +73,11 @@ class nv_form_input: nv_form_control {
 				add_new_line();
 				return true;
 			}
-			if (((clipboard_flags & nv_clipboard_flag_cut) > 0) && ((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_X)) && password_mask == "") {
+			if (((clipboard_flags & NV_CLIPBOARD_FLAG_CUT) > 0) && ((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_X)) && password_mask == "") {
 				cut_highlighted();
 				return true;
 			}
-			if (((clipboard_flags & nv_clipboard_flag_paste) > 0) && (((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_V)) || key_pressed(KEY_PASTE))) {
+			if (((clipboard_flags & NV_CLIPBOARD_FLAG_PASTE) > 0) && (((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_V)) || key_pressed(KEY_PASTE))) {
 				paste_text();
 				return true;
 			}
@@ -118,7 +118,7 @@ class nv_form_input: nv_form_control {
 			speak(nvform_keyboard_echo_string(nvform_keyboard_echo));
 			return true;
 		}
-		if (((clipboard_flags & nv_clipboard_flag_copy) > 0) && ((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_C)) && (password_mask == "")) {
+		if (((clipboard_flags & NV_CLIPBOARD_FLAG_COPY) > 0) && ((keyboard_modifiers & KEYMOD_CTRL) > 0) && (key_repeating(KEY_C)) && (password_mask == "")) {
 			copy_highlighted();
 			return true;
 		}
@@ -230,14 +230,14 @@ class nv_form_input: nv_form_control {
 			text = new_text;
 			cursor += character.length();
 		}
-		if (echo_flag == textflag_entry_characters || echo_flag == textflag_entry_characters_words)
+		if (echo_flag == TEXTFLAG_ENTRY_CHARACTERS || echo_flag == TEXTFLAG_ENTRY_CHARACTERS_WORDS)
 			speak(input_box_speak(find_appropriate_character(character)));
-		if (nvform_word_separators .find(character) > -1 && (echo_flag == textflag_entry_words || echo_flag == textflag_entry_characters_words)) {
+		if (nvform_word_separators .find(character) > -1 && (echo_flag == TEXTFLAG_ENTRY_WORDS || echo_flag == TEXTFLAG_ENTRY_CHARACTERS_WORDS)) {
 			int temp_position = cursor - 1;
 			while (temp_position > 0 && (temp_position >= text.length() || nvform_word_separators .find(text[temp_position - 1]) < 0 && text[temp_position - 1] != "\n"))
 				temp_position--;
 			string word = read_word_from_position(temp_position);
-			speak(word, echo_flag != textflag_entry_characters_words);
+			speak(word, echo_flag != TEXTFLAG_ENTRY_CHARACTERS_WORDS);
 		}
 		nv_form_input_event e(this);
 		e.character = character;
@@ -258,14 +258,14 @@ class nv_form_input: nv_form_control {
 			text = text.substr(0, cursor) + character + text.substr(cursor + size);
 			cursor += character.length();
 		}
-		if (echo_flag == textflag_entry_characters || echo_flag == textflag_entry_characters_words)
+		if (echo_flag == TEXTFLAG_ENTRY_CHARACTERS || echo_flag == TEXTFLAG_ENTRY_CHARACTERS_WORDS)
 			speak(input_box_speak(find_appropriate_character(character)), true);
 		if (@suggestion_manager != null) suggestion_manager.update();
-		if (nvform_word_separators .find(character) > -1 && (echo_flag == textflag_entry_words || echo_flag == textflag_entry_characters_words)) {
+		if (nvform_word_separators .find(character) > -1 && (echo_flag == TEXTFLAG_ENTRY_WORDS || echo_flag == TEXTFLAG_ENTRY_CHARACTERS_WORDS)) {
 			int temp_position = cursor - 1;
 			while (temp_position > 0 && (temp_position >= text.length() || nvform_word_separators .find(text[temp_position - 1]) < 0))
 				temp_position--;
-			speak(read_word_from_position(temp_position), echo_flag != textflag_entry_characters_words);
+			speak(read_word_from_position(temp_position), echo_flag != TEXTFLAG_ENTRY_CHARACTERS_WORDS);
 		}
 		nv_form_input_event e(this);
 		e.character = character;
@@ -284,7 +284,7 @@ class nv_form_input: nv_form_control {
 		else if (character == "\t") return "tab";
 		string oc = nv_get_readable_key(character, true);
 		if (oc != "") return oc;
-		if ((echo_flag == textflag_entry_none) && (ignore_echo_flag == false))
+		if ((echo_flag == TEXTFLAG_ENTRY_NONE) && (ignore_echo_flag == false))
 			return "";
 		if (character.is_alphanumeric()) {
 			if (character.is_upper())
@@ -327,7 +327,7 @@ class nv_form_input: nv_form_control {
 		if (!multiline)
 			return;
 		add("\n");
-		if (echo_flag != textflag_entry_none)
+		if (echo_flag != TEXTFLAG_ENTRY_NONE)
 			speak("New Line", true);
 	}
 	int current_line_start_position(bool word = false) {
@@ -893,7 +893,7 @@ class nv_form_input: nv_form_control {
 		return col;
 	}
 	bool set_line(int line, int col = 1, bool silent = false) {
-		if (type != nv_form_ct_input) return false;
+		if (type != NV_FORM_CT_INPUT) return false;
 		if (line < 1) {
 			if (!silent) speak("line number out of range");
 			return false;

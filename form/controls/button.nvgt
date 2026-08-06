@@ -1,7 +1,7 @@
 class nv_form_button: nv_form_control {
 	bool pressed;
 	nv_form_button(nv_form@parent, const string &in caption, const string &in id = "", bool pressed = false) {
-		super(caption, id, nv_form_ct_button, @parent);
+		super(caption, id, NV_FORM_CT_BUTTON, @parent);
 		this.pressed = pressed;
 	}
 	bool monitor() { return pressed; }

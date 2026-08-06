@@ -4,7 +4,7 @@ class nv_form_progress_bar: nv_form_control {
 	double last_spoken_value = -1;
 	bool speak_progress_updates = true, beep_progress_updates = true;
 	nv_form_progress_bar(nv_form@parent, const string &in caption, const string &in id = "", double min_value = 0.0, double max_value = 100.0, double initial_value = 0.0) {
-		super(caption, id, nv_form_ct_progress, @parent);
+		super(caption, id, NV_FORM_CT_PROGRESS, @parent);
 		this.min_value = min_value;
 		this.max_value = max_value;
 		cur_value = initial_value;
@@ -36,7 +36,7 @@ class nv_form_progress_bar: nv_form_control {
 	}
 	void set_value(double v) property {
 		if (v < min_value || v > max_value) {
-			parent.error(nv_form_error_invalid_value);
+			parent.error(NV_FORM_ERROR_INVALID_VALUE);
 			return;
 		}
 		bool should_speak = abs(v - last_spoken_value) >= update_interval;

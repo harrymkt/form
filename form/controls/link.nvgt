@@ -2,7 +2,7 @@ class nv_form_link: nv_form_control {
 	bool pressed;
 	string url;
 	nv_form_link(nv_form@parent, const string &in caption, const string &in url, const string &in id = "", bool pressed = false) {
-		super(caption, id, nv_form_ct_link, @parent);
+		super(caption, id, NV_FORM_CT_LINK, @parent);
 		this.pressed = pressed;
 		this.url = url;
 	}

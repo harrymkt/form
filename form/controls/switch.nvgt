@@ -2,7 +2,7 @@ class nv_form_switch: nv_form_control {
 	nv_form_switch_item@[]items;
 	int index = -1;
 	nv_form_switch(nv_form@parent, const string &in caption, const string &in id = "", nv_form_switch_item@[] items = {}) {
-		super(caption, id, nv_form_ct_switch, @parent);
+		super(caption, id, NV_FORM_CT_SWITCH, @parent);
 		if (items.length() > 0) this.items.extend(items);
 	}
 	nv_form_switch_item@get_focused_item() const property {
@@ -11,7 +11,7 @@ class nv_form_switch: nv_form_control {
 	}
 	bool get_next() property {
 		if (items.length() <= 0) {
-			parent.error(nv_form_error_switch_empty);
+			parent.error(NV_FORM_ERROR_SWITCH_EMPTY);
 			return false;
 		}
 		int x = index;
@@ -22,14 +22,14 @@ class nv_form_switch: nv_form_control {
 	}
 	bool set_pos(int value) {
 		if (items.length() <= 0) {
-			parent.error(nv_form_error_switch_empty);
+			parent.error(NV_FORM_ERROR_SWITCH_EMPTY);
 			return false;
 		}
 		if (value < 0) value = 0;
 		if (value >= items.length()) value = items.length() - 1;
 		if (index != value) {
 			index = value;
-			event.fire(nv_form_event(this, nv_form_event_switch_changed));
+			event.fire(nv_form_event(this, NV_FORM_EVENT_SWITCH_CHANGED));
 		}
 		return true;
 	}
@@ -56,12 +56,12 @@ class nv_form_switch: nv_form_control {
 	}
 	bool delete (const string &in id) {
 		if (items.length() <= 0) {
-			parent.error(nv_form_error_list_empty);
+			parent.error(NV_FORM_ERROR_SWITCH_EMPTY);
 			return false;
 		}
 		int item_index = get_item_index(id);
 		if (item_index == -1) {
-			parent.error(nv_form_error_invalid_value);
+			parent.error(NV_FORM_ERROR_INVALID_VALUE);
 			return false;
 		}
 		@items[item_index] = null;

@@ -18,7 +18,7 @@ Use `nv_form::add_slider` rather than constructing the slider yourself, unless y
 
 A slider can speak text instead of numbers for some or all of its values, which is useful when the ends of the range mean something special. See `set_text`.
 
-## Keys:
+### Keys:
 - Up and down: change the value by one step.
 - Page up and page down: change the value by one page.
 - Home and end: jump to the minimum or the maximum.

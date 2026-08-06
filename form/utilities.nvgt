@@ -1,19 +1,19 @@
 #include "utils/*.nvgt"
 string get_nv_form_control_type_string(int ct) {
 	switch (ct) {
-		case nv_form_ct_button: return "button";
-		case nv_form_ct_input: return "edit";
-		case nv_form_ct_spin: return "spin edit";
-		case nv_form_ct_checkbox: return "check box";
-		case nv_form_ct_progress: return "progress bar";
-		case nv_form_ct_list: return "list";
-		case nv_form_ct_slider: return "slider";
-		case nv_form_ct_keyboard_area: return "keyboard area";
-		case nv_form_ct_link: return "link";
-		case nv_form_ct_switch: return "switch";
-		case nv_form_ct_tab_control: return "Tab control";
-		case nv_form_ct_treeview: return "tree view";
-		case nv_form_ct_table: return "table";
+		case NV_FORM_CT_BUTTON: return "button";
+		case NV_FORM_CT_INPUT: return "edit";
+		case NV_FORM_CT_SPIN: return "spin edit";
+		case NV_FORM_CT_CHECKBOX: return "check box";
+		case NV_FORM_CT_PROGRESS: return "progress bar";
+		case NV_FORM_CT_LIST: return "list";
+		case NV_FORM_CT_SLIDER: return "slider";
+		case NV_FORM_CT_KEYBOARD_AREA: return "keyboard area";
+		case NV_FORM_CT_LINK: return "link";
+		case NV_FORM_CT_SWITCH: return "switch";
+		case NV_FORM_CT_TAB_CONTROL: return "Tab control";
+		case NV_FORM_CT_TREEVIEW: return "tree view";
+		case NV_FORM_CT_TABLE: return "table";
 		default: return "";
 	}
 }
@@ -180,7 +180,7 @@ class nv_search_for : nv_utility_form {
 }
 bool handle_nv_utils(nv_form_control@ ctrl) {
 	if (@ctrl == null) return false;
-	int[] supported_types = {nv_form_ct_list, nv_form_ct_input};
+	int[] supported_types = {NV_FORM_CT_LIST, NV_FORM_CT_INPUT};
 	if (supported_types.find(ctrl.type) < 0) return false;
 	nv_form_input@ inp = cast < nv_form_input@ > (ctrl);
 	if (@inp != null && inp.password_mask != "") return false;
@@ -199,47 +199,4 @@ bool handle_nv_utils(nv_form_control@ ctrl) {
 		return true;
 	}
 	return false;
-}
-int nv_search_dialog(const string&in title, const string[]@ item_texts) {
-	if (@item_texts == null || item_texts.length() == 0) return -1;
-	nv_form f;
-	f.create_window(title, false, true);
-	nv_form_input@ inp = f.add_input("Search for", "search");
-	f.add_button("Search", "ok", true);
-	f.add_button("Cancel", "cancel", false, true);
-	while (f.monitor()) {
-		if (f.is_pressed("ok")) {
-			string query = inp.text.lower();
-			if (query == "") {
-				speak("Enter some text to search for");
-				f.focus_control(inp, false, false);
-				continue;
-			}
-			for (uint i = 0; i < item_texts.length(); i++) {
-				if (item_texts[i].lower().find(query) != -1) return i;
-			}
-			speak("Nothing found");
-			f.focus_control(inp, false, false);
-		}
-		wait(5);
-	}
-	return -1;
-}
-int nv_go_to_index_dialog(const string&in title, int max_items) {
-	if (max_items <= 0) return -1;
-	nv_form f;
-	f.create_window(title, false, true);
-	nv_form_input@ inp = f.add_input("Item number (1-" + max_items + ")", "index");
-	f.add_button("Go", "ok", true);
-	f.add_button("Cancel", "cancel", false, true);
-	while (f.monitor()) {
-		if (f.is_pressed("ok")) {
-			int idx = parse_int(inp.text);
-			if (idx >= 1 && idx <= max_items) return idx;
-			speak("Invalid item number");
-			f.focus_control(inp, false, false);
-		}
-		wait(5);
-	}
-	return -1;
 }

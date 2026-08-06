@@ -27,7 +27,7 @@ class nv_form_event_dispatcher {
 		return handlers.length();
 	}
 	void fire(nv_form_event@ event) {
-		for (uint i = 0; i < handlers.length(); i++) {
+		for (uint i = 0; i < count; i++) {
 			if (@handlers[i] == null) continue;
 			handlers[i](event);
 		}
@@ -42,12 +42,12 @@ class nv_form_event {
 	}
 }
 enum nv_form_event_type {
-	nv_form_event_none = 0,
-	nv_form_event_focus_gained,
-	nv_form_event_focus_lost,
-	nv_form_event_checkbox_toggled,
-	nv_form_event_slider_changed,
-	nv_form_event_switch_changed,
-	nv_form_event_input,
-	nv_form_event_list
+	NV_FORM_EVENT_NONE = 0,
+	NV_FORM_EVENT_FOCUS_GAINED,
+	NV_FORM_EVENT_FOCUS_LOST,
+	NV_FORM_EVENT_CHECKBOX_TOGGLED,
+	NV_FORM_EVENT_SLIDER_CHANGED,
+	NV_FORM_EVENT_SWITCH_CHANGED,
+	NV_FORM_EVENT_INPUT,
+	NV_FORM_EVENT_LIST
 }

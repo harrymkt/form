@@ -3,7 +3,7 @@ class nv_form_tab_control: nv_form_control {
 	private int tab_page_index = 0;
 	bool speak_position = false;
 	nv_form_tab_control(nv_form@parent, const string &in caption, const string &in id = "", bool speak_position = false) {
-		super(caption, id, nv_form_ct_tab_control, @parent);
+		super(caption, id, NV_FORM_CT_TAB_CONTROL, @parent);
 		this.speak_position = speak_position;
 	}
 	void ready_index(bool shift_is_down) {

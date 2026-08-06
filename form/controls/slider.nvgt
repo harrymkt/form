@@ -2,7 +2,7 @@ class nv_form_slider: nv_form_control {
 	double min_value, max_value, step, page, value;
 	dictionary text;
 	nv_form_slider(nv_form@parent, const string &in caption, const string &in id = "", double min_value = 0, double max_value = 100, double step = 1, double initial_value = 0, double page = 0) {
-		super(caption, id, nv_form_ct_slider, @parent);
+		super(caption, id, NV_FORM_CT_SLIDER, @parent);
 		this.min_value = min_value;
 		this.max_value = max_value;
 		this.step = step;
@@ -19,7 +19,7 @@ class nv_form_slider: nv_form_control {
 		value = v;
 		clamp_value();
 		if (value != old_value) {
-			event.fire(nv_form_event(this, nv_form_event_slider_changed));
+			event.fire(nv_form_event(this, NV_FORM_EVENT_SLIDER_CHANGED));
 			return true;
 		}
 		return false;

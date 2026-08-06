@@ -1,5 +1,5 @@
 class nv_form_keyboard_area: nv_form_control {
 	nv_form_keyboard_area(nv_form@parent, const string &in caption, const string &in id = "") {
-		super(caption, id, nv_form_ct_keyboard_area, @parent);
+		super(caption, id, NV_FORM_CT_KEYBOARD_AREA, @parent);
 	}
 }

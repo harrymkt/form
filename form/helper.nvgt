@@ -14,14 +14,14 @@ shared int nv_string_contains(const string &in str, const string &in search, int
 // Wrapper functions for keyboard echo changing.
 shared uint nvform_change_keyboard_echo(int keyboard_echo, int dir = 1) {
 	keyboard_echo += dir;
-	if (keyboard_echo < textflag_entry_none) keyboard_echo = textflag_entry_characters_words;
-	else if (keyboard_echo > textflag_entry_characters_words) keyboard_echo = textflag_entry_none;
+	if (keyboard_echo < TEXTFLAG_ENTRY_NONE) keyboard_echo = TEXTFLAG_ENTRY_CHARACTERS_WORDS;
+	else if (keyboard_echo > TEXTFLAG_ENTRY_CHARACTERS_WORDS) keyboard_echo = TEXTFLAG_ENTRY_NONE;
 	return keyboard_echo;
 }
 shared string nvform_keyboard_echo_string(int keyboard_echo) {
-	if (keyboard_echo == textflag_entry_characters) return "characters";
-	else if (keyboard_echo == textflag_entry_words) return "words";
-	else if (keyboard_echo == textflag_entry_characters_words) return "characters and words";
+	if (keyboard_echo == TEXTFLAG_ENTRY_CHARACTERS) return "characters";
+	else if (keyboard_echo == TEXTFLAG_ENTRY_WORDS) return "words";
+	else if (keyboard_echo == TEXTFLAG_ENTRY_CHARACTERS_WORDS) return "characters and words";
 	else return "none";
 }
 string nv_get_readable_key(const string &in symbol, bool strict = false) {

@@ -1,7 +1,7 @@
 class nv_form_checkbox: nv_form_control {
 	bool state = false;
 	nv_form_checkbox(nv_form@parent, const string &in caption, const string &in id = "", bool initial_state = false) {
-		super(caption, id, nv_form_ct_checkbox, @parent);
+		super(caption, id, NV_FORM_CT_CHECKBOX, @parent);
 		this.state = initial_state;
 	}
 	void fire() {
@@ -13,18 +13,18 @@ class nv_form_checkbox: nv_form_control {
 	}
 	void toggle() {
 		state = !state;
-		event.fire(nv_form_event(this, nv_form_event_checkbox_toggled));
+		event.fire(nv_form_event(this, NV_FORM_EVENT_CHECKBOX_TOGGLED));
 	}
 	bool check() {
 		if (state) return false;
 		state = true;
-		event.fire(nv_form_event(this, nv_form_event_checkbox_toggled));
+		event.fire(nv_form_event(this, NV_FORM_EVENT_CHECKBOX_TOGGLED));
 		return true;
 	}
 	bool uncheck() {
 		if (!state) return false;
 		state = false;
-		event.fire(nv_form_event(this, nv_form_event_checkbox_toggled));
+		event.fire(nv_form_event(this, NV_FORM_EVENT_CHECKBOX_TOGGLED));
 		return true;
 	}
 	bool handle_input() {

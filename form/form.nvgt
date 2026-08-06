@@ -8,7 +8,7 @@
 #include "utilities.nvgt"
 #include "speech.nvgt"
 string nvform_word_separators = "_ .,!\\\"/[{()}]=\n:|";
-int nvform_keyboard_echo = textflag_entry_characters;
+int nvform_keyboard_echo = TEXTFLAG_ENTRY_CHARACTERS;
 nv_form_event_handler@ default_nv_form_event_handler = null;
 class nv_form {
 	nv_form_control@[]controls;
@@ -88,10 +88,10 @@ class nv_form {
 	}
 	bool create_window(const string &in title, bool change_screen_title = true, bool say_dialog = true, bool silent = false) {
 		if (active) {
-			error(nv_form_error_already_active);
+			error(NV_FORM_ERROR_ALREADY_ACTIVE);
 			return false;
 		} else if (title.empty()) {
-			error(nv_form_error_invalid_operation);
+			error(NV_FORM_ERROR_INVALID_OPERATION);
 			return false;
 		}
 		window_title = title;
@@ -168,7 +168,7 @@ class nv_form {
 					cancel_control.fire();
 					handled = true;
 				}
-			} else if (@pctrl != null && pctrl.type != nv_form_ct_keyboard_area && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))) {
+			} else if (@pctrl != null && pctrl.type != NV_FORM_CT_KEYBOARD_AREA && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))) {
 				pctrl.fire();
 				handled = true;
 			}
@@ -199,19 +199,19 @@ class nv_form {
 		errors.insert_last(error);
 	}
 	nv_form_errorcode get_last_error() const property {
-		if (errors.length() <= 0) return nv_form_error_none;
+		if (errors.length() <= 0) return NV_FORM_ERROR_NONE;
 		return errors[errors.length() - 1];
 	}
 	bool is_pressed(const string &in control_id) {
 		nv_form_control@ctrl = get_control_by_id(control_id);
-		if (@ctrl == null || (ctrl.type != nv_form_ct_button && ctrl.type != nv_form_ct_link)) {
-			error(nv_form_error_invalid_control);
+		if (@ctrl == null || (ctrl.type != NV_FORM_CT_BUTTON && ctrl.type != NV_FORM_CT_LINK)) {
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return false;
 		}
 		nv_form_button@btn = cast < nv_form_button@ > (ctrl);
 		nv_form_link@link = cast < nv_form_link@ > (ctrl);
 		if (@btn == null && @link == null) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return false;
 		} else if (@btn != null) return is_pressed(btn);
 		else if (@link != null) return is_pressed(link);
@@ -219,7 +219,7 @@ class nv_form {
 	}
 	bool is_pressed(nv_form_button@btn) {
 		if (@btn.parent != this) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return false;
 		}
 		bool result = btn.pressed;
@@ -228,7 +228,7 @@ class nv_form {
 	}
 	bool is_pressed(nv_form_link@link) {
 		if (@link.parent != this) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return false;
 		}
 		bool result = link.pressed;
@@ -238,14 +238,14 @@ class nv_form {
 	bool is_checked(const string &in control_id) {
 		nv_form_checkbox@box = cast < nv_form_checkbox@ > (get_control_by_id(control_id));
 		if (@box == null) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return false;
 		}
 		return is_checked(box);
 	}
 	bool is_checked(nv_form_checkbox@box) {
 		if (@box.parent != this) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return false;
 		}
 		return box.state;
@@ -255,7 +255,7 @@ class nv_form {
 	}
 	nv_form_list_item@get_list_focus(nv_form_list_box@lst) {
 		if (@lst == null or @lst.parent != this) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return null;
 		}
 		return lst.focused_item;
@@ -265,7 +265,7 @@ class nv_form {
 	}
 	nv_form_switch_item@get_switch_focus(nv_form_switch@lst) {
 		if (@lst == null or @lst.parent != this) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return null;
 		}
 		return lst.focused_item;
@@ -275,7 +275,7 @@ class nv_form {
 	}
 	double get_slider_value(nv_form_slider@slider, double def = 0) {
 		if (@slider == null or @slider.parent != this) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return def;
 		}
 		return slider.value;
@@ -363,15 +363,15 @@ class nv_form {
 	}
 	bool add_control(nv_form_control@ctrl, bool primary = false, bool cancel = false, int position = -1, nv_form_control_callback@callback = null) {
 		if (!active) {
-			error(nv_form_error_no_window);
+			error(NV_FORM_ERROR_NO_WINDOW);
 			return false;
 		}
 		if (max_controls > 0 and controls.length() >= max_controls) {
-			error(nv_form_error_window_full);
+			error(NV_FORM_ERROR_WINDOW_FULL);
 			return false;
 		}
 		if (@ctrl == null) {
-			error(nv_form_error_invalid_control);
+			error(NV_FORM_ERROR_INVALID_CONTROL);
 			return false;
 		}
 		if (@callback != null) @ctrl.callback = callback;
@@ -395,9 +395,9 @@ class nv_form {
 		if (control_index<0 || control_index >= controls.length()) return false;
 		nv_form_control@ current = current_control;
 		if (@current != null)
-			current.event.fire(nv_form_event(current, nv_form_event_focus_lost));
+			current.event.fire(nv_form_event(current, NV_FORM_EVENT_FOCUS_LOST));
 		this.control_index = control_index;
-		current_control.event.fire(nv_form_event(this.current_control, nv_form_event_focus_gained));
+		current_control.event.fire(nv_form_event(this.current_control, NV_FORM_EVENT_FOCUS_GAINED));
 		current_control.on_focus_gained_immediate();
 		bool result;
 		if (!quiet) result = speak_current_control(interrupt_previous_speech);
