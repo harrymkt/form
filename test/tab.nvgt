@@ -17,13 +17,14 @@ void main() {
 	@ctm.shortcut = parse_nv_shortcut("Alt+T");
 	tc.add_tab_page("sound system");
 	f.add_control(tc);
+	nv_form_button@ ok = f.add_button("Ok", "ok", true);
 	f.add_button("cancel", cancel = true);
 	while (true) {
 		if (!f.monitor()) {
 			alert("ok", "time to exit this application");
 			break;
 		}
-		if (key_pressed(KEY_ESCAPE)) exit();
+		if (f.is_pressed(ok)) speak("OK is pressed");
 		wait(5);
 	}
 }

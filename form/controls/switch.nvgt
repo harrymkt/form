@@ -66,9 +66,6 @@ class nv_form_switch: nv_form_control {
 		}
 		@items[item_index] = null;
 		items.remove_at(item_index);
-		if (items.length() <= 0) index = -1;
-		else if (index >= int(items.length())) index = items.length() - 1;
-		else if (index > item_index) index--;
 		return true;
 	}
 	int get_item_index(const string &in id) {

@@ -98,4 +98,9 @@ class nv_form_spin: nv_form_input {
 	void on_focus_gained_immediate() {
 		text = output;
 	}
+	bool add(const string &in character, bool silent = false) {
+		if (!nv_form_input::add(character, silent)) return false;
+		text = output;
+		return true;
+	}
 }

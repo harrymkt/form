@@ -198,9 +198,6 @@ class nv_form_list_box: nv_form_control {
 		}
 		@items[item_index] = null;
 		items.remove_at(item_index);
-		if (items.length() <= 0) list_position = -1;
-		else if (list_position >= int(items.length())) list_position = items.length() - 1;
-		else if (list_position > item_index) list_position--;
 		return true;
 	}
 	int get_item_index(const string &in id) {

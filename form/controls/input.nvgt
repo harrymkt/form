@@ -223,7 +223,7 @@ class nv_form_input: nv_form_control {
 			sel_end = -1;
 			prevselect = true;
 		}
-		if ((max_length > 0) && (utf8length(new_text) >= uint(max_length)))
+		if ((max_length > 0) && (utf8length(new_text) >= max_length))
 			return false;
 		new_text = new_text.substr(0, cursor) + character + new_text.substr(cursor);
 		if (read_only == false) {
@@ -247,7 +247,7 @@ class nv_form_input: nv_form_control {
 		return true;
 	}
 	bool edit(const string &in character) {
-		if ((max_length > 0) && (utf8length(text) > uint(max_length)))
+		if (max_length > 0 && utf8length(text) > max_length)
 			return false;
 		if (text.length() == 0)
 			return false;
@@ -792,7 +792,7 @@ class nv_form_input: nv_form_control {
 			return;
 		}
 		int selected_length = (sel_start > -1 && sel_end > -1 && sel_start <= sel_end) ? utf8length(text.substr(sel_start, sel_end - sel_start + 1)) : 0;
-		if ((max_length > 0) && (int(utf8length(text) + utf8length(paste)) - selected_length > max_length)) {
+		if (max_length > 0 && (utf8length(text) + utf8length(paste) - selected_length) > max_length) {
 			speak("clipboard data can't fit", true);
 			return;
 		}
@@ -924,7 +924,7 @@ class nv_form_input: nv_form_control {
 		return __default_text__;
 	}
 	void set_default_text(string v) property {
-		while ((max_length > 0) && (utf8length(v) > uint(max_length)))
+		while ((max_length > 0) && (utf8length(v) > max_length))
 			v = v.substr(0, utf8prev(v, v.length()));
 		__default_text__ = v;
 		text = v;
