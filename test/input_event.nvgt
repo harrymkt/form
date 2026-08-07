@@ -15,14 +15,14 @@ void main() {
 	alert("Information", (fclcount > 0 ? "You lost focus from the input " + fclcount + " times" : "You did not lose focus from the input control"));
 }
 void input_event(nv_form_event@ event) {
-	if (event.type == nv_form_event_focus_gained) {
+	if (event.type == NV_FORM_EVENT_FOCUS_GAINED) {
 		selectinput(event);
 		return;
-	} else if (event.type == nv_form_event_focus_lost) {
+	} else if (event.type == NV_FORM_EVENT_FOCUS_LOST) {
 		fclcount ++;
 		return;
 	}
-	if (event.type != nv_form_event_input) return;
+	if (event.type != NV_FORM_EVENT_INPUT) return;
 	nv_form_input_event@ e = cast<nv_form_input_event@>(event);
 	if (@e == null) return;
 	if (e.deleted) {
@@ -38,7 +38,7 @@ void input_event(nv_form_event@ event) {
 	// Play the sound
 }
 void selectinput(nv_form_event@ e) {
-	if (e.type != nv_form_event_focus_gained) return;
+	if (e.type != NV_FORM_EVENT_FOCUS_GAINED) return;
 	nv_form_input@ c = cast<nv_form_input@>(e.ctrl);
 	if (@c == null) return; // Invalid
 	c.select(0);

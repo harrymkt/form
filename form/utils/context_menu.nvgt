@@ -12,16 +12,21 @@ class nv_form_context_menu : nv_utility_form {
 	nv_form_context_menu_item@[] items;
 	nv_form f;
 	nv_form_list_box@ list;
-	nv_form_context_menu(nv_form@ parent_form, nv_form_control@ owner_control) {
+	string title;
+	bool change_screen_title, say_dialog;
+	nv_form_context_menu(nv_form@ parent_form, nv_form_control@ owner_control, const string &in title = "Context Menu", bool change_screen_title = false, bool say_dialog = true) {
 		@this.parent_form = @parent_form;
 		@this.owner_control = @owner_control;
+		this.title = title;
+		this.change_screen_title = change_screen_title;
+		this.say_dialog = say_dialog;
 	}
 	void add_item(const string &in caption, nv_form_control_callback@ callback) {
 		items.insert_last(nv_form_context_menu_item(caption, @callback));
 	}
 	void show() {
 		if (items.length() == 0 || f.active) return;
-		f.create_window("Context Menu", false, true);
+		f.create_window(title, change_screen_title, say_dialog);
 		@list = f.add_list("Actions", "actions", false);
 		for (uint i = 0; i < items.length(); i++) {
 			list.add(items[i].caption, "" + i);

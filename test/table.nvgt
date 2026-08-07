@@ -1,5 +1,4 @@
 #include "../form/form.nvgt"
-
 void main() {
 	nv_form f;
 	f.create_window("Table View Test", say_dialog = true);
@@ -11,6 +10,7 @@ void main() {
 	table.add_row({"4", "David", "5000", "20"}, "row4");
 	table.add_row({"5", "Eve", "9200", "48"}, "row5");
 	f.add_button("Close", "close", cancel = true);
+	wait(250);
 	speak("Table test loaded. Use Up/Down to navigate rows, Left/Right for columns. Press H for header, R for whole row, and S to sort by current column.");
 	while (f.monitor()) {
 		wait(5);

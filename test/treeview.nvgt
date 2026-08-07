@@ -4,6 +4,7 @@ void main() {
 	nv_form f;
 	f.create_window("Treeview Test");
 	nv_form_treeview@ a = nv_form_treeview(f, "Directories", "dir");
+	@a.shortcut = nv_shortcut(KEY_D, alt = true);
 	nv_form_tree_node@ b = a.add("C:", "C:");
 	string[] list = {"Program files", "Program files (x86)", "Users", "Windows"};
 	for (uint i = 0; i < list.length(); i++) b.add(list[i], list[i]);

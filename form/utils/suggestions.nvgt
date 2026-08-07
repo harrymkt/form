@@ -7,20 +7,16 @@ class nv_form_suggestion_manager : nv_utility_form {
 	nv_form_list_box@ list;
 	bool active = false;
 	string last_spoken_match = "";
-
 	nv_form_suggestion_manager(nv_form@ parent_form, nv_form_input@ owner_input) {
 		@this.parent_form = @parent_form;
 		@this.owner_input = @owner_input;
 	}
-
 	void add_suggestion(const string &in s) {
 		suggestions.insert_last(s);
 	}
-
 	void add_suggestions(const string[] &in s) {
 		for (uint i = 0; i < s.length(); i++) suggestions.insert_last(s[i]);
 	}
-
 	void update() {
 		string text = owner_input.text.lower();
 		current_matches.resize(0);
@@ -31,7 +27,6 @@ class nv_form_suggestion_manager : nv_utility_form {
 				}
 			}
 		}
-
 		if (current_matches.length() > 0) {
 			if (!active) {
 				show();
@@ -43,7 +38,6 @@ class nv_form_suggestion_manager : nv_utility_form {
 			close();
 		}
 	}
-
 	private void show() {
 		active = true;
 		f.create_window("Suggestions", false, false, true); // Silent creation
@@ -53,7 +47,6 @@ class nv_form_suggestion_manager : nv_utility_form {
 		update_list();
 		@parent_form.nv_utility_form = this;
 	}
-
 	private void update_list() {
 		list.items.resize(0);
 		for (uint i = 0; i < current_matches.length(); i++) {
@@ -65,12 +58,10 @@ class nv_form_suggestion_manager : nv_utility_form {
 			speak(last_spoken_match + "");
 		}
 	}
-
 	void monitor() {
 		// Suggestions monitor doesn't call f.monitor() directly because we want input to stay in the owner_input
 		// Instead, it listens for specific keys redirected from the main form or input
 	}
-
 	bool handle_key(int key) {
 		if (!active) return false;
 		if (key == KEY_DOWN) {
@@ -102,7 +93,6 @@ class nv_form_suggestion_manager : nv_utility_form {
 		}
 		return false;
 	}
-
 	void close() {
 		active = false;
 		@parent_form.nv_utility_form = null;
