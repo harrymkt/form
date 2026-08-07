@@ -48,6 +48,9 @@ class nv_form_treeview : nv_form_control {
 	nv_form_tree_node@[] nodes;
 	nv_form_tree_node@[] visible_nodes;
 	int pos = -1;
+	bool multinav = true;
+	timer multinavtime;
+	string multichar;
 	nv_form_treeview(nv_form@ parent, const string &in caption, const string &in id = "") {
 		super(caption, id, NV_FORM_CT_TREEVIEW, @parent);
 	}
@@ -113,19 +116,72 @@ class nv_form_treeview : nv_form_control {
 		if (@node == null) return "";
 		return node.id;
 	}
+	bool set_pos(int index, bool autobound = true) {
+		if (visible_nodes.length() <= 0) {
+			return false;
+		}
+		if (autobound) {
+			if (index < 0) index = 0;
+			if (index >= visible_nodes.length()) index = visible_nodes.length() - 1;
+		}
+		if (index < 0 || index > visible_nodes.length() - 1) return false;
+		pos = index;
+		return true;
+	}
+	int find_multinav_position(const string &in prefix) {
+		if (prefix == "" || visible_nodes.length() <= 0) return -1;
+		string current_prefix;
+		if (pos >= 0 && pos < visible_nodes.length())
+			current_prefix = visible_nodes[pos].text.lower().substr(0, prefix.length());
+		for (int i = pos; i < visible_nodes.length(); i++) {
+			if (i < 0 || i >= visible_nodes.length()) continue;
+			if (i == pos) continue;
+			if (visible_nodes[i].text.lower().substr(0, prefix.length()) == prefix) {
+				if (current_prefix == prefix && prefix.length() > 1) return pos;
+				return i;
+			}
+		}
+		for (uint i = 0; i < visible_nodes.length(); i++) {
+			if (visible_nodes[i].text.lower().substr(0, prefix.length()) == prefix) {
+				if (current_prefix == prefix && prefix.length() > 1) return pos;
+				return i;
+			}
+		}
+		return -1;
+	}
 	bool handle_input() {
 		if (visible_nodes.length() == 0) return false;
+		if (multinav) {
+			if (multinavtime.elapsed > 1000 and multichar != "")
+				multichar = "";
+			string c = get_characters().lower();
+			if (c != "" and multichar != c) {
+				multinavtime.restart();
+				multichar += c;
+			}
+			if (multichar != "" and c != "") {
+				multichar = multichar.lower();
+				int position = find_multinav_position(multichar);
+				if (position < 0) {
+					return false;
+				}
+				if (position != pos) {
+					if (set_pos(position, false)) speak_current_node();
+				} else speak_current_node();
+				return true;
+			}
+		}
 		nv_form_tree_node@ node = focused_node;
 		if (key_repeating(KEY_DOWN)) {
 			if (pos < visible_nodes.length() - 1) {
-				pos++;
+				set_pos(pos + 1);
 				speak_current_node();
 				return true;
 			}
 		}
 		if (key_repeating(KEY_UP)) {
 			if (pos > 0) {
-				pos--;
+				set_pos(pos - 1);
 				speak_current_node();
 				return true;
 			}
@@ -164,20 +220,21 @@ class nv_form_treeview : nv_form_control {
 			}
 		}
 		if (key_repeating(KEY_HOME)) {
-			pos = 0;
+			set_pos(0);
 			speak_current_node();
 			return true;
 		}
 		if (key_repeating(KEY_END)) {
-			pos = visible_nodes.length() - 1;
+			set_pos(visible_nodes.length() - 1);
 			speak_current_node();
 			return true;
 		}
+		if (handle_nv_utils(this)) return true;
 		return false;
 	}
-	void speak_current_node() {
+	void speak_current_node(bool interrupt = tts_default_interrupt) {
 		string t = node_str(focused_node);
-		if (t != "") speak(t);
+		if (t != "") speak(t, interrupt);
 	}
 	string node_str(nv_form_tree_node@ node) const {
 		if (@node == null) return "";
@@ -187,6 +244,38 @@ class nv_form_treeview : nv_form_control {
 		}
 		string info = node.text + "  " + state + "  level " + node.level;
 		return info;
+	}
+	bool search(const string &in text, int dir = 1, bool silent = false) {
+		if (visible_nodes.length() < 1) return false;
+		string[] nav_nodes(this.visible_nodes.length());
+		for (uint i = 0; i < this.visible_nodes.length(); i++)
+			nav_nodes[i] = visible_nodes[i].text;
+		bool already_on_result = false;
+		if (pos > -1) already_on_result = nav_nodes[pos].find(text) > -1;
+		string wrapped = "";
+		int position = pos;
+		if (position < 0) position = 0;
+		for (int i = position + dir; i != position; i += dir) {
+			if (i < 0) {
+				i = visible_nodes.length() - 1;
+				wrapped = "wrapped to bottom";
+			} else if (i >= visible_nodes.length()) {
+				i = 0;
+				wrapped = "wrapped to top";
+			}
+			if (i == position) break;
+			if (nav_nodes[i].find(text) < 0) continue;
+			if (set_pos(i, false)) {
+				if (!silent) {
+					if (wrapped != "") speak(wrapped);
+					speak_current_node(false);
+				}
+				return true;
+			}
+		}
+		if (!silent)
+			speak(already_on_result ? "nothing else found" : "nothing found");
+		return false;
 	}
 	string get_control_info() {
 		return node_str(focused_node);

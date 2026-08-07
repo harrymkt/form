@@ -52,14 +52,14 @@ class nv_form_context_menu : nv_utility_form {
 			int idx = list.list_position;
 			if (idx >= 0 && idx < int(items.length())) {
 				nv_form_control_callback@ cb = items[idx].callback;
-				close();
+				close(true);
 				if (@cb != null) cb(owner_control);
 			}
 		}
 	}
-	private void close() {
+	private void close(bool silent = false) {
 		@parent_form.nv_utility_form = null;
 		f.reset();
-		parent_form.focus_control(owner_control);
+		parent_form.focus_control(owner_control, silent);
 	}
 }

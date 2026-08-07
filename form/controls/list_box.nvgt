@@ -101,12 +101,7 @@ class nv_form_list_box: nv_form_control {
 			if (multichar != "" and c != "") {
 				multichar = multichar.lower();
 				int position = find_multinav_position(multichar);
-				if (position < 0 && multichar != c) {
-					multichar = c;
-					position = find_multinav_position(multichar);
-				}
 				if (position < 0) {
-					multichar = "";
 					return false;
 				}
 				if (position != list_position) {
